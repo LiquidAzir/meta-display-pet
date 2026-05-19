@@ -1,0 +1,10 @@
+{
+  "name": "Meta Display Pet",
+  "short_name": "Pet",
+  "icons": [
+    { "src": "favicon.png", "sizes": "128x128", "type": "image/png" }
+  ],
+  "background_color": "#000000",
+  "theme_color": "#00d4ff",
+  "display": "standalone"
+}

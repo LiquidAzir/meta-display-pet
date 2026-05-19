@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=600, height=600, initial-scale=1.0, user-scalable=no">
+  <title>Meta Display Pet</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- ============ WELCOME ============ -->
+    <div id="welcome" class="screen">
+      <div class="welcome-wrap">
+        <div class="welcome-title">Meta Display Pet</div>
+        <div class="welcome-sub">Hatch. Care. Bond.</div>
+        <canvas id="welcome-canvas" class="welcome-art" width="240" height="240"></canvas>
+        <button class="primary-btn focusable" data-action="welcome-start">Hatch a new pet</button>
+        <button class="ghost-btn focusable" data-action="open-settings">Settings</button>
+      </div>
+    </div>
+
+    <!-- ============ EGG SELECT ============ -->
+    <div id="egg-select" class="screen hidden">
+      <header class="header compact">
+        <button class="back-btn focusable" data-action="back">&#8592;</button>
+        <h1>Choose your egg</h1>
+      </header>
+      <div class="egg-stage">
+        <button class="egg-nav focusable" data-action="egg-prev">&#9664;</button>
+        <div class="egg-display">
+          <canvas id="egg-canvas" width="200" height="200"></canvas>
+          <div class="egg-name" id="egg-name">Flame Egg</div>
+          <div class="egg-desc" id="egg-desc">Warm and fierce.</div>
+          <div class="egg-dots" id="egg-dots"></div>
+        </div>
+        <button class="egg-nav focusable" data-action="egg-next">&#9654;</button>
+      </div>
+      <nav class="nav-bar">
+        <button class="nav-item primary focusable" data-action="egg-confirm">Choose this egg</button>
+      </nav>
+    </div>
+
+    <!-- ============ NAME PET ============ -->
+    <div id="name-pet" class="screen hidden">
+      <header class="header compact">
+        <button class="back-btn focusable" data-action="back">&#8592;</button>
+        <h1>Name your pet</h1>
+      </header>
+      <div class="name-wrap">
+        <div class="name-display" id="name-display">_</div>
+        <div class="letter-grid" id="letter-grid"></div>
+      </div>
+      <nav class="nav-bar">
+        <button class="nav-item focusable" data-action="name-del">Delete</button>
+        <button class="nav-item primary focusable" data-action="name-confirm">Confirm</button>
+      </nav>
+    </div>
+
+    <!-- ============ MAIN ============ -->
+    <div id="main" class="screen hidden">
+      <header class="main-header">
+        <div class="pet-id">
+          <span id="pet-name-label">Pet</span>
+          <span class="pet-stage" id="pet-stage-label">Baby</span>
+        </div>
+        <div class="pet-age" id="pet-age-label">0d 0h</div>
+      </header>
+      <div class="pet-stage-area">
+        <canvas id="pet-canvas" width="600" height="380"></canvas>
+        <div class="mood-bubble hidden" id="mood-bubble"></div>
+      </div>
+      <div class="stats-strip">
+        <div class="stat" id="stat-hunger" title="Hunger">
+          <div class="stat-icon">&#127828;</div>
+          <div class="stat-bar"><div class="stat-fill"></div></div>
+        </div>
+        <div class="stat" id="stat-happy" title="Happiness">
+          <div class="stat-icon">&#9829;</div>
+          <div class="stat-bar"><div class="stat-fill"></div></div>
+        </div>
+        <div class="stat" id="stat-clean" title="Cleanliness">
+          <div class="stat-icon">&#9763;</div>
+          <div class="stat-bar"><div class="stat-fill"></div></div>
+        </div>
+        <div class="stat" id="stat-energy" title="Energy">
+          <div class="stat-icon">&#9889;</div>
+          <div class="stat-bar"><div class="stat-fill"></div></div>
+        </div>
+        <div class="stat" id="stat-health" title="Health">
+          <div class="stat-icon">&#10010;</div>
+          <div class="stat-bar"><div class="stat-fill"></div></div>
+        </div>
+      </div>
+      <nav class="action-rail">
+        <button class="rail-btn focusable" data-action="act-feed" title="Feed">&#127828;</button>
+        <button class="rail-btn focusable" data-action="act-play" title="Play">&#127918;</button>
+        <button class="rail-btn focusable" data-action="act-clean" title="Clean">&#127787;</button>
+        <button class="rail-btn focusable" data-action="act-sleep" title="Sleep">&#127769;</button>
+        <button class="rail-btn focusable" data-action="act-medicine" title="Medicine">&#128138;</button>
+        <button class="rail-btn focusable" data-action="act-stats" title="Stats">&#128202;</button>
+      </nav>
+    </div>
+
+    <!-- ============ FEED MENU ============ -->
+    <div id="feed" class="screen hidden">
+      <header class="header compact">
+        <button class="back-btn focusable" data-action="back">&#8592;</button>
+        <h1>Feed</h1>
+      </header>
+      <div class="content">
+        <button class="big-action focusable" data-action="feed-meal">
+          <div class="big-action-icon">&#127857;</div>
+          <div class="big-action-body">
+            <div class="big-action-title">Full Meal</div>
+            <div class="big-action-sub">Big hunger boost. Weight +1.</div>
+          </div>
+        </button>
+        <button class="big-action focusable" data-action="feed-snack">
+          <div class="big-action-icon">&#127852;</div>
+          <div class="big-action-body">
+            <div class="big-action-title">Sweet Snack</div>
+            <div class="big-action-sub">Small hunger boost. Happiness +. Weight +1.</div>
+          </div>
+        </button>
+        <button class="big-action focusable" data-action="feed-water">
+          <div class="big-action-icon">&#128167;</div>
+          <div class="big-action-body">
+            <div class="big-action-title">Water</div>
+            <div class="big-action-sub">Refreshes. Small hunger + health.</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- ============ PLAY MENU ============ -->
+    <div id="play" class="screen hidden">
+      <header class="header compact">
+        <button class="back-btn focusable" data-action="back">&#8592;</button>
+        <h1>Play</h1>
+      </header>
+      <div class="content">
+        <button class="big-action focusable" data-action="play-simon">
+          <div class="big-action-icon">&#129518;</div>
+          <div class="big-action-body">
+            <div class="big-action-title">Echo Dance</div>
+            <div class="big-action-sub">Repeat the direction sequence.</div>
+          </div>
+        </button>
+        <button class="big-action focusable" data-action="play-reaction">
+          <div class="big-action-icon">&#10024;</div>
+          <div class="big-action-body">
+            <div class="big-action-title">Star Catch</div>
+            <div class="big-action-sub">Tap when the star appears.</div>
+          </div>
+        </button>
+        <button class="big-action focusable" data-action="play-guess">
+          <div class="big-action-icon">&#127922;</div>
+          <div class="big-action-body">
+            <div class="big-action-title">Hi-Lo</div>
+            <div class="big-action-sub">Guess the secret number with hints.</div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <!-- ============ MINI-GAME: SIMON ============ -->
+    <div id="game-simon" class="screen hidden">
+      <header class="header compact">
+        <button class="back-btn focusable" data-action="back">&#8592;</button>
+        <h1>Echo Dance</h1>
+        <span class="header-meta"><span id="simon-round">Round 1</span></span>
+      </header>
+      <div class="content game-content">
+        <div class="simon-prompt" id="simon-prompt">Watch the pattern</div>
+        <div class="simon-pad">
+          <div class="simon-cell" id="simon-up">&#9650;</div>
+          <div class="simon-row">
+            <div class="simon-cell" id="simon-left">&#9664;</div>
+            <div class="simon-center" id="simon-center">&#11044;</div>
+            <div class="simon-cell" id="simon-right">&#9654;</div>
+          </div>
+          <div class="simon-cell" id="simon-down">&#9660;</div>
+        </div>
+        <div class="simon-status" id="simon-status">Get ready…</div>
+      </div>
+    </div>
+
+    <!-- ============ MINI-GAME: REACTION ============ -->
+    <div id="game-reaction" class="screen hidden">
+      <header class="header compact">
+        <button class="back-btn focusable" data-action="back">&#8592;</button>
+        <h1>Star Catch</h1>
+        <span class="header-meta" id="reaction-score">0/5</span>
+      </header>
+      <div class="content game-content">
+        <div class="reaction-stage" id="reaction-stage">
+          <div class="reaction-text" id="reaction-text">Press to start</div>
+          <div class="reaction-star hidden" id="reaction-star">&#10024;</div>
+        </div>
+        <button class="primary-btn focusable" data-action="reaction-tap">Tap</button>
+      </div>
+    </div>
+
+    <!-- ============ MINI-GAME: GUESS ============ -->
+    <div id="game-guess" class="screen hidden">
+      <header class="header compact">
+        <button class="back-btn focusable" data-action="back">&#8592;</button>
+        <h1>Hi-Lo</h1>
+        <span class="header-meta" id="guess-tries">Tries: 0</span>
+      </header>
+      <div class="content game-content">
+        <div class="guess-display">
+          <div class="guess-current" id="guess-current">50</div>
+          <div class="guess-hint" id="guess-hint">Guess 1-100</div>
+        </div>
+        <div class="guess-controls">
+          <button class="guess-btn focusable" data-action="guess-down10">-10</button>
+          <button class="guess-btn focusable" data-action="guess-down1">-1</button>
+          <button class="guess-btn primary focusable" data-action="guess-submit">Guess</button>
+          <button class="guess-btn focusable" data-action="guess-up1">+1</button>
+          <button class="guess-btn focusable" data-action="guess-up10">+10</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ STATS ============ -->
+    <div id="stats" class="screen hidden">
+      <header class="header compact">
+        <button class="back-btn focusable" data-action="back">&#8592;</button>
+        <h1>Pet Stats</h1>
+      </header>
+      <div class="content stats-content" id="stats-content">
+        <!-- filled by JS -->
+      </div>
+    </div>
+
+    <!-- ============ EVOLVE OVERLAY ============ -->
+    <div id="evolve" class="screen hidden">
+      <div class="evolve-wrap">
+        <div class="evolve-title">Evolving…</div>
+        <canvas id="evolve-canvas" width="260" height="260"></canvas>
+        <div class="evolve-name" id="evolve-name">Pet</div>
+        <button class="primary-btn focusable" data-action="evolve-continue">Continue</button>
+      </div>
+    </div>
+
+    <!-- ============ DEATH ============ -->
+    <div id="death" class="screen hidden">
+      <div class="death-wrap">
+        <div class="death-title">Goodbye, friend</div>
+        <canvas id="death-canvas" width="200" height="200"></canvas>
+        <div class="death-summary" id="death-summary">Lived a quiet life.</div>
+        <button class="primary-btn focusable" data-action="death-hatch">Hatch a new pet</button>
+      </div>
+    </div>
+
+    <!-- ============ SETTINGS ============ -->
+    <div id="settings" class="screen hidden">
+      <header class="header compact">
+        <button class="back-btn focusable" data-action="back">&#8592;</button>
+        <h1>Settings</h1>
+      </header>
+      <div class="content">
+        <div class="setting-card">
+          <div class="setting-label">Device ID</div>
+          <div class="setting-value" id="device-id-label">—</div>
+        </div>
+        <div class="setting-card">
+          <div class="setting-label">Pet history</div>
+          <div class="setting-value" id="history-label">No pets yet</div>
+        </div>
+        <button class="big-action focusable danger" data-action="settings-reset">
+          <div class="big-action-icon">&#9888;</div>
+          <div class="big-action-body">
+            <div class="big-action-title">Reset everything</div>
+            <div class="big-action-sub">Delete current pet and all history.</div>
+          </div>
+        </button>
+        <div class="setting-footer">v1.0 · Meta Display Pet</div>
+      </div>
+    </div>
+
+    <!-- toast lives outside screens -->
+    <div id="toast" class="toast"></div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

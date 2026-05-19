@@ -1,0 +1,26 @@
+# Render Blueprint for Meta Display Pet.
+# Provisions a single static site — no backend (state lives in localStorage).
+# Apply by pushing this file to a connected Git repo, then in the Render
+# dashboard: Blueprints → New Blueprint Instance → pick this repo.
+
+services:
+  - type: web
+    name: meta-display-pet
+    runtime: static
+    rootDir: .
+    buildCommand: ""
+    staticPublishPath: .
+    headers:
+      - path: /*
+        name: X-Frame-Options
+        value: SAMEORIGIN
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: "geolocation=(), microphone=(), camera=()"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
