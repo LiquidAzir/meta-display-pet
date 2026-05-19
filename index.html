@@ -17,8 +17,125 @@
         <div class="welcome-title">Meta Display Pet</div>
         <div class="welcome-sub">Hatch. Care. Bond.</div>
         <canvas id="welcome-canvas" class="welcome-art" width="240" height="240"></canvas>
+        <div class="welcome-blurb">
+          A virtual pet that lives in real time.<br>
+          Check on it daily — feed, play, clean, evolve.
+        </div>
         <button class="primary-btn focusable" data-action="welcome-start">Hatch a new pet</button>
-        <button class="ghost-btn focusable" data-action="open-settings">Settings</button>
+        <div class="welcome-row">
+          <button class="ghost-btn focusable" data-action="open-howto">How to play</button>
+          <button class="ghost-btn focusable" data-action="open-settings">Settings</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ HOW TO PLAY ============ -->
+    <div id="how-to-play" class="screen hidden">
+      <header class="header compact">
+        <button class="back-btn focusable" data-action="back">&#8592;</button>
+        <h1>How to play</h1>
+      </header>
+      <div class="content howto-content">
+
+        <div class="howto-section">
+          <div class="howto-heading">The basics</div>
+          <div class="howto-body">
+            Hatch one of four eggs and raise it through six life stages over
+            about a week of real time. Your pet's stats drain even when the
+            app is closed — open it daily to keep your friend happy.
+          </div>
+        </div>
+
+        <div class="howto-section">
+          <div class="howto-heading">Controls</div>
+          <div class="howto-grid">
+            <div class="howto-key">D-pad</div>
+            <div>Move focus between buttons</div>
+            <div class="howto-key">Select</div>
+            <div>Activate the focused button</div>
+            <div class="howto-key">Back</div>
+            <div>Return to the previous screen</div>
+          </div>
+        </div>
+
+        <div class="howto-section">
+          <div class="howto-heading">Caring for your pet</div>
+          <div class="howto-act">
+            <span class="howto-icon">&#127828;</span>
+            <div>
+              <b>Feed</b> — Full meal, snack, or water.
+              Snacks boost happiness but add weight.
+            </div>
+          </div>
+          <div class="howto-act">
+            <span class="howto-icon">&#127918;</span>
+            <div>
+              <b>Play</b> — Three mini-games. Wins boost happiness
+              and shape your pet's evolution.
+            </div>
+          </div>
+          <div class="howto-act">
+            <span class="howto-icon">&#127787;</span>
+            <div>
+              <b>Clean</b> — Pets poop every few hours. Clean it up
+              before cleanliness drops too low.
+            </div>
+          </div>
+          <div class="howto-act">
+            <span class="howto-icon">&#127769;</span>
+            <div>
+              <b>Sleep</b> — Restores energy. Pets won't accept
+              food or play while sleeping.
+            </div>
+          </div>
+          <div class="howto-act">
+            <span class="howto-icon">&#128138;</span>
+            <div>
+              <b>Medicine</b> — Cures sickness. Don't give it when
+              they're healthy or they'll feel worse.
+            </div>
+          </div>
+        </div>
+
+        <div class="howto-section">
+          <div class="howto-heading">Stats to watch</div>
+          <div class="howto-grid">
+            <div class="howto-key">&#127828; Hunger</div>
+            <div>Drops over time — feed regularly</div>
+            <div class="howto-key">&#9829; Happy</div>
+            <div>Drops without play and snacks</div>
+            <div class="howto-key">&#9763; Clean</div>
+            <div>Drops from poops and time</div>
+            <div class="howto-key">&#9889; Energy</div>
+            <div>Drops with activity, restored by sleep</div>
+            <div class="howto-key">&#10010; Health</div>
+            <div>Falls when other stats hit zero</div>
+          </div>
+        </div>
+
+        <div class="howto-section">
+          <div class="howto-heading">Lifecycle</div>
+          <div class="howto-body">
+            Egg (1h) &rarr; Baby (6h) &rarr; Child (1d) &rarr;
+            Teen (2d) &rarr; Adult (2d) &rarr; Senior. Total: about 7 days
+            of real time. How you care for your pet shapes which adult form
+            it grows into — three paths per species, twelve total.
+          </div>
+        </div>
+
+        <div class="howto-section">
+          <div class="howto-heading">Death &amp; new pets</div>
+          <div class="howto-body">
+            Neglect leads to sickness and eventually death. When your pet
+            passes you can hatch a new one. Past pets are remembered in
+            Settings &rarr; Pet history.
+          </div>
+        </div>
+
+        <div class="howto-section howto-footer">
+          Tip: tap the &#128202; stats button to see all numbers and your care score.
+        </div>
+
       </div>
     </div>
 

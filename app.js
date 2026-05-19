@@ -1365,6 +1365,7 @@
     switch (action) {
       case 'back': navigateBack(); break;
       case 'open-settings': navigateTo('settings'); break;
+      case 'open-howto':    navigateTo('how-to-play'); break;
       case 'settings-reset': resetEverything(); break;
       case 'welcome-start': navigateTo('egg-select'); break;
 
