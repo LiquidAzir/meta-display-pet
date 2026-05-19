@@ -1,4 +1,4 @@
-# Meta Display Pet
+# GlassPet
 
 A Tamagotchi-style virtual pet for Meta Ray-Ban Display smart glasses.
 

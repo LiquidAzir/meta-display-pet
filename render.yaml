@@ -1,4 +1,4 @@
-# Render Blueprint for Meta Display Pet.
+# Render Blueprint for GlassPet.
 # Provisions a single static site — no backend (state lives in localStorage).
 # Apply by pushing this file to a connected Git repo, then in the Render
 # dashboard: Blueprints → New Blueprint Instance → pick this repo.
