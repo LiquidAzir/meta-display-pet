@@ -1317,6 +1317,259 @@
     }
   }
 
+  // === ROCK PAPER SCISSORS ===
+  var rpsState = null;
+  var RPS_ICONS = { rock: '✊', paper: '✋', scissors: '✌' };
+  function startRps() {
+    rpsState = { wins: 0, losses: 0, locked: false };
+    document.getElementById('rps-score').textContent = '0-0';
+    document.getElementById('rps-you').textContent = '❓';
+    document.getElementById('rps-pet').textContent = '❓';
+    var r = document.getElementById('rps-result');
+    r.textContent = 'Pick your move';
+    r.className = 'rps-result';
+    state.miniGame = { stop: function() { rpsState = null; } };
+  }
+  function rpsPlay(choice) {
+    if (!rpsState || rpsState.locked) return;
+    rpsState.locked = true;
+    var picks = ['rock','paper','scissors'];
+    var pet = picks[Math.floor(Math.random() * 3)];
+    document.getElementById('rps-you').textContent = RPS_ICONS[choice];
+    document.getElementById('rps-pet').textContent = '…';
+    setTimeout(function() {
+      if (!rpsState) return;
+      document.getElementById('rps-pet').textContent = RPS_ICONS[pet];
+      var r = document.getElementById('rps-result');
+      var verdict;
+      if (pet === choice) {
+        verdict = 'Tie!';
+        r.className = 'rps-result tie';
+      } else if (
+        (choice === 'rock' && pet === 'scissors') ||
+        (choice === 'paper' && pet === 'rock') ||
+        (choice === 'scissors' && pet === 'paper')
+      ) {
+        verdict = 'You win!';
+        r.className = 'rps-result win';
+        rpsState.wins++;
+        if (state.pet && !state.pet.dead) {
+          state.pet.happy = clamp(state.pet.happy + 8, 0, 100);
+          if (rpsState.wins % 3 === 0) state.pet.gameWins++;
+          saveData();
+        }
+      } else {
+        verdict = 'Pet wins.';
+        r.className = 'rps-result lose';
+        rpsState.losses++;
+        if (state.pet && !state.pet.dead) {
+          state.pet.happy = clamp(state.pet.happy + 2, 0, 100);
+          saveData();
+        }
+      }
+      r.textContent = verdict + ' Pick again.';
+      document.getElementById('rps-score').textContent = rpsState.wins + '-' + rpsState.losses;
+      rpsState.locked = false;
+    }, 450);
+  }
+
+  // === COIN FLIP ===
+  var coinState = null;
+  function startCoin() {
+    coinState = { wins: 0, losses: 0, locked: false };
+    document.getElementById('coin-score').textContent = '0-0';
+    document.getElementById('coin').textContent = '?';
+    document.getElementById('coin').className = 'coin';
+    var r = document.getElementById('coin-result');
+    r.textContent = 'Call it';
+    r.className = 'coin-result';
+    state.miniGame = { stop: function() { coinState = null; } };
+  }
+  function coinCall(call) {
+    if (!coinState || coinState.locked) return;
+    coinState.locked = true;
+    var coin = document.getElementById('coin');
+    coin.textContent = '?';
+    coin.className = 'coin flipping';
+    setTimeout(function() {
+      if (!coinState) return;
+      var result = Math.random() < 0.5 ? 'heads' : 'tails';
+      coin.textContent = result === 'heads' ? 'H' : 'T';
+      coin.className = 'coin';
+      var r = document.getElementById('coin-result');
+      if (result === call) {
+        r.textContent = 'It\'s ' + result + '! You called it.';
+        r.className = 'coin-result win';
+        coinState.wins++;
+        if (state.pet && !state.pet.dead) {
+          state.pet.happy = clamp(state.pet.happy + 6, 0, 100);
+          if (coinState.wins % 3 === 0) state.pet.gameWins++;
+          saveData();
+        }
+      } else {
+        r.textContent = 'It\'s ' + result + '. Better luck next.';
+        r.className = 'coin-result lose';
+        coinState.losses++;
+        if (state.pet && !state.pet.dead) {
+          state.pet.happy = clamp(state.pet.happy + 1, 0, 100);
+          saveData();
+        }
+      }
+      document.getElementById('coin-score').textContent = coinState.wins + '-' + coinState.losses;
+      coinState.locked = false;
+    }, 950);
+  }
+
+  // === TIC TAC TOE ===
+  var tttState = null;
+  var TTT_LINES = [
+    [0,1,2],[3,4,5],[6,7,8],   // rows
+    [0,3,6],[1,4,7],[2,5,8],   // cols
+    [0,4,8],[2,4,6],           // diagonals
+  ];
+  function startTtt() {
+    tttState = { board: ['','','','','','','','',''], turn: 'X', over: false, wins: 0, losses: 0 };
+    state.miniGame = { stop: function() { tttState = null; } };
+    redrawTtt();
+  }
+  function redrawTtt() {
+    if (!tttState) return;
+    document.getElementById('ttt-score').textContent = tttState.wins + '-' + tttState.losses;
+    var cells = document.querySelectorAll('#ttt-board .ttt-cell');
+    cells.forEach(function(c) {
+      var i = parseInt(c.dataset.ttt, 10);
+      var v = tttState.board[i];
+      c.textContent = v;
+      if (v) c.dataset.mark = v;
+      else delete c.dataset.mark;
+      c.classList.remove('win-line');
+    });
+    var status = document.getElementById('ttt-status');
+    if (tttState.over) {
+      if (tttState.winLine) {
+        tttState.winLine.forEach(function(i){ cells[i].classList.add('win-line'); });
+      }
+      if (tttState.winner === 'X') {
+        status.textContent = 'You win!';
+        status.className = 'ttt-status win';
+      } else if (tttState.winner === 'O') {
+        status.textContent = 'Pet wins.';
+        status.className = 'ttt-status lose';
+      } else {
+        status.textContent = 'Draw.';
+        status.className = 'ttt-status tie';
+      }
+    } else {
+      status.textContent = tttState.turn === 'X' ? 'Your turn (X)' : 'Pet thinking...';
+      status.className = 'ttt-status';
+    }
+  }
+  function tttCheckWin(board, mark) {
+    for (var i = 0; i < TTT_LINES.length; i++) {
+      var L = TTT_LINES[i];
+      if (board[L[0]] === mark && board[L[1]] === mark && board[L[2]] === mark) {
+        return L;
+      }
+    }
+    return null;
+  }
+  function tttClick(idx) {
+    if (!tttState || tttState.over || tttState.turn !== 'X' || tttState.board[idx]) return;
+    tttState.board[idx] = 'X';
+    var win = tttCheckWin(tttState.board, 'X');
+    if (win) {
+      tttState.over = true;
+      tttState.winner = 'X';
+      tttState.winLine = win;
+      tttState.wins++;
+      if (state.pet && !state.pet.dead) {
+        state.pet.happy = clamp(state.pet.happy + 12, 0, 100);
+        state.pet.gameWins++;
+        saveData();
+        showToast('Nice! +12 happiness', 'success');
+      }
+      redrawTtt();
+      return;
+    }
+    if (tttState.board.every(function(c){ return c; })) {
+      tttState.over = true;
+      tttState.winner = null;
+      redrawTtt();
+      return;
+    }
+    tttState.turn = 'O';
+    redrawTtt();
+    setTimeout(tttPetMove, 500);
+  }
+  function tttPetMove() {
+    if (!tttState || tttState.over) return;
+    // Simple AI: take winning move if any, else block, else random
+    var board = tttState.board;
+    var pick = null;
+    // win
+    for (var i = 0; i < 9; i++) {
+      if (!board[i]) {
+        board[i] = 'O';
+        if (tttCheckWin(board, 'O')) pick = i;
+        board[i] = '';
+        if (pick !== null) break;
+      }
+    }
+    // block
+    if (pick === null) {
+      for (var j = 0; j < 9; j++) {
+        if (!board[j]) {
+          board[j] = 'X';
+          if (tttCheckWin(board, 'X')) pick = j;
+          board[j] = '';
+          if (pick !== null) break;
+        }
+      }
+    }
+    // center
+    if (pick === null && !board[4]) pick = 4;
+    // random
+    if (pick === null) {
+      var open = [];
+      for (var k = 0; k < 9; k++) if (!board[k]) open.push(k);
+      pick = open[Math.floor(Math.random() * open.length)];
+    }
+    board[pick] = 'O';
+    var win = tttCheckWin(board, 'O');
+    if (win) {
+      tttState.over = true;
+      tttState.winner = 'O';
+      tttState.winLine = win;
+      tttState.losses++;
+      if (state.pet && !state.pet.dead) {
+        state.pet.happy = clamp(state.pet.happy + 3, 0, 100);
+        saveData();
+      }
+      redrawTtt();
+      return;
+    }
+    if (board.every(function(c){ return c; })) {
+      tttState.over = true;
+      tttState.winner = null;
+      if (state.pet && !state.pet.dead) {
+        state.pet.happy = clamp(state.pet.happy + 4, 0, 100);
+        saveData();
+      }
+      redrawTtt();
+      return;
+    }
+    tttState.turn = 'X';
+    redrawTtt();
+  }
+  function tttReset() {
+    if (!tttState) return;
+    var w = tttState.wins, l = tttState.losses;
+    startTtt();
+    tttState.wins = w;
+    tttState.losses = l;
+    redrawTtt();
+  }
+
   // ==================== TOAST ====================
   var toastTimer;
   function showToast(msg, kind) {
@@ -1424,6 +1677,27 @@
         navigateTo('game-guess');
         startGuess();
         break;
+      case 'play-rps':
+        navigateTo('game-rps');
+        startRps();
+        break;
+      case 'play-coin':
+        navigateTo('game-coin');
+        startCoin();
+        break;
+      case 'play-ttt':
+        navigateTo('game-ttt');
+        startTtt();
+        break;
+
+      case 'rps-rock':     rpsPlay('rock'); break;
+      case 'rps-paper':    rpsPlay('paper'); break;
+      case 'rps-scissors': rpsPlay('scissors'); break;
+
+      case 'coin-heads':   coinCall('heads'); break;
+      case 'coin-tails':   coinCall('tails'); break;
+
+      case 'ttt-reset':    tttReset(); break;
 
       case 'reaction-tap': reactionTap(); break;
 
@@ -1449,6 +1723,11 @@
   // ==================== INPUT ====================
   function setupEvents() {
     document.addEventListener('click', function(e) {
+      var tttCell = e.target.closest('[data-ttt]');
+      if (tttCell) {
+        tttClick(parseInt(tttCell.dataset.ttt, 10));
+        return;
+      }
       var el = e.target.closest('[data-action]');
       if (el) handleAction(el.dataset.action, el);
     });

@@ -70,7 +70,8 @@
           <div class="howto-act">
             <span class="howto-icon">&#127918;</span>
             <div>
-              <b>Play</b> — Three mini-games. Wins boost happiness
+              <b>Play</b> — Six mini-games (Rock Paper Scissors, Coin Flip,
+              Tic Tac Toe, Echo Dance, Star Catch, Hi-Lo). Wins boost happiness
               and shape your pet's evolution.
             </div>
           </div>
@@ -259,6 +260,27 @@
         <h1>Play</h1>
       </header>
       <div class="content">
+        <button class="big-action focusable" data-action="play-rps">
+          <div class="big-action-icon">&#9994;</div>
+          <div class="big-action-body">
+            <div class="big-action-title">Rock Paper Scissors</div>
+            <div class="big-action-sub">Quick — one round vs your pet.</div>
+          </div>
+        </button>
+        <button class="big-action focusable" data-action="play-coin">
+          <div class="big-action-icon">&#129689;</div>
+          <div class="big-action-body">
+            <div class="big-action-title">Coin Flip</div>
+            <div class="big-action-sub">Call it. Heads or tails.</div>
+          </div>
+        </button>
+        <button class="big-action focusable" data-action="play-ttt">
+          <div class="big-action-icon">&#10062;</div>
+          <div class="big-action-body">
+            <div class="big-action-title">Tic Tac Toe</div>
+            <div class="big-action-sub">You're X, pet is O.</div>
+          </div>
+        </button>
         <button class="big-action focusable" data-action="play-simon">
           <div class="big-action-icon">&#129518;</div>
           <div class="big-action-body">
@@ -280,6 +302,86 @@
             <div class="big-action-sub">Guess the secret number with hints.</div>
           </div>
         </button>
+      </div>
+    </div>
+
+    <!-- ============ MINI-GAME: ROCK PAPER SCISSORS ============ -->
+    <div id="game-rps" class="screen hidden">
+      <header class="header compact">
+        <button class="back-btn focusable" data-action="back">&#8592;</button>
+        <h1>Rock Paper Scissors</h1>
+        <span class="header-meta" id="rps-score">0-0</span>
+      </header>
+      <div class="content game-content">
+        <div class="rps-stage">
+          <div class="rps-side">
+            <div class="rps-label">You</div>
+            <div class="rps-show" id="rps-you">&#10067;</div>
+          </div>
+          <div class="rps-vs">vs</div>
+          <div class="rps-side">
+            <div class="rps-label">Pet</div>
+            <div class="rps-show" id="rps-pet">&#10067;</div>
+          </div>
+        </div>
+        <div class="rps-result" id="rps-result">Pick your move</div>
+        <div class="rps-buttons">
+          <button class="rps-btn focusable" data-action="rps-rock">
+            <div class="rps-btn-icon">&#9994;</div>
+            <div class="rps-btn-label">Rock</div>
+          </button>
+          <button class="rps-btn focusable" data-action="rps-paper">
+            <div class="rps-btn-icon">&#9995;</div>
+            <div class="rps-btn-label">Paper</div>
+          </button>
+          <button class="rps-btn focusable" data-action="rps-scissors">
+            <div class="rps-btn-icon">&#9996;</div>
+            <div class="rps-btn-label">Scissors</div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ MINI-GAME: COIN FLIP ============ -->
+    <div id="game-coin" class="screen hidden">
+      <header class="header compact">
+        <button class="back-btn focusable" data-action="back">&#8592;</button>
+        <h1>Coin Flip</h1>
+        <span class="header-meta" id="coin-score">0-0</span>
+      </header>
+      <div class="content game-content">
+        <div class="coin-stage">
+          <div class="coin" id="coin">?</div>
+        </div>
+        <div class="coin-result" id="coin-result">Call it</div>
+        <div class="coin-buttons">
+          <button class="coin-btn focusable" data-action="coin-heads">Heads</button>
+          <button class="coin-btn focusable" data-action="coin-tails">Tails</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ MINI-GAME: TIC TAC TOE ============ -->
+    <div id="game-ttt" class="screen hidden">
+      <header class="header compact">
+        <button class="back-btn focusable" data-action="back">&#8592;</button>
+        <h1>Tic Tac Toe</h1>
+        <span class="header-meta" id="ttt-score">0-0</span>
+      </header>
+      <div class="content game-content">
+        <div class="ttt-status" id="ttt-status">Your turn (X)</div>
+        <div class="ttt-board" id="ttt-board">
+          <button class="ttt-cell focusable" data-ttt="0"></button>
+          <button class="ttt-cell focusable" data-ttt="1"></button>
+          <button class="ttt-cell focusable" data-ttt="2"></button>
+          <button class="ttt-cell focusable" data-ttt="3"></button>
+          <button class="ttt-cell focusable" data-ttt="4"></button>
+          <button class="ttt-cell focusable" data-ttt="5"></button>
+          <button class="ttt-cell focusable" data-ttt="6"></button>
+          <button class="ttt-cell focusable" data-ttt="7"></button>
+          <button class="ttt-cell focusable" data-ttt="8"></button>
+        </div>
+        <button class="ghost-btn focusable" id="ttt-reset" data-action="ttt-reset">New game</button>
       </div>
     </div>
 
