@@ -1196,13 +1196,15 @@
     document.getElementById('simon-status').textContent = 'You scored ' + rounds + ' round' + (rounds !== 1 ? 's' : '') + '.';
     document.getElementById('simon-prompt').textContent = 'Back to return';
     if (state.pet && !state.pet.dead) {
-      state.pet.happy = clamp(state.pet.happy + rounds * 8, 0, 100);
-      state.pet.energy = clamp(state.pet.energy - rounds * 2, 0, 100);
+      // Generous: baseline +12 for playing, +10 per round survived.
+      var gain = 12 + rounds * 10;
+      state.pet.happy = clamp(state.pet.happy + gain, 0, 100);
+      state.pet.energy = clamp(state.pet.energy - rounds, 0, 100);
       if (rounds >= 3) {
         state.pet.gameWins++;
-        showToast('Great session! +' + (rounds * 8) + ' happiness', 'success');
+        showToast('Great session! +' + gain + ' happiness', 'success');
       } else {
-        showToast('+' + (rounds * 8) + ' happiness', 'success');
+        showToast('+' + gain + ' happiness', 'success');
       }
       saveData();
     }
@@ -1275,8 +1277,11 @@
     if (!rs) return;
     document.getElementById('reaction-text').textContent = 'Hits: ' + rs.hits + ' / ' + rs.total;
     if (state.pet && !state.pet.dead) {
-      state.pet.happy = clamp(state.pet.happy + rs.hits * 10, 0, 100);
-      if (rs.hits >= 4) state.pet.gameWins++;
+      // Generous: baseline +15 for playing, +10 per hit.
+      var gain = 15 + rs.hits * 10;
+      state.pet.happy = clamp(state.pet.happy + gain, 0, 100);
+      if (rs.hits >= 3) state.pet.gameWins++;
+      showToast('+' + gain + ' happiness', 'success');
       saveData();
     }
     reactionState = null;
@@ -1303,7 +1308,8 @@
     if (guessState.guess === guessState.target) {
       document.getElementById('guess-hint').textContent = 'Got it in ' + guessState.tries + '!';
       if (state.pet && !state.pet.dead) {
-        var bonus = Math.max(4, 30 - guessState.tries * 3);
+        // Always +25 minimum for winning, faster solve = bonus up to +20.
+        var bonus = 25 + Math.max(0, 20 - guessState.tries * 2);
         state.pet.happy = clamp(state.pet.happy + bonus, 0, 100);
         if (guessState.tries <= 7) state.pet.gameWins++;
         saveData();
@@ -1342,9 +1348,11 @@
       document.getElementById('rps-pet').textContent = RPS_ICONS[pet];
       var r = document.getElementById('rps-result');
       var verdict;
+      var gain = 0;
       if (pet === choice) {
         verdict = 'Tie!';
         r.className = 'rps-result tie';
+        gain = 8;
       } else if (
         (choice === 'rock' && pet === 'scissors') ||
         (choice === 'paper' && pet === 'rock') ||
@@ -1352,20 +1360,20 @@
       ) {
         verdict = 'You win!';
         r.className = 'rps-result win';
+        gain = 15;
         rpsState.wins++;
         if (state.pet && !state.pet.dead) {
-          state.pet.happy = clamp(state.pet.happy + 8, 0, 100);
-          if (rpsState.wins % 3 === 0) state.pet.gameWins++;
-          saveData();
+          if (rpsState.wins % 2 === 0) state.pet.gameWins++;
         }
       } else {
         verdict = 'Pet wins.';
         r.className = 'rps-result lose';
+        gain = 7;
         rpsState.losses++;
-        if (state.pet && !state.pet.dead) {
-          state.pet.happy = clamp(state.pet.happy + 2, 0, 100);
-          saveData();
-        }
+      }
+      if (state.pet && !state.pet.dead) {
+        state.pet.happy = clamp(state.pet.happy + gain, 0, 100);
+        saveData();
       }
       r.textContent = verdict + ' Pick again.';
       document.getElementById('rps-score').textContent = rpsState.wins + '-' + rpsState.losses;
@@ -1397,23 +1405,24 @@
       coin.textContent = result === 'heads' ? 'H' : 'T';
       coin.className = 'coin';
       var r = document.getElementById('coin-result');
+      var gain;
       if (result === call) {
         r.textContent = 'It\'s ' + result + '! You called it.';
         r.className = 'coin-result win';
         coinState.wins++;
+        gain = 18;
         if (state.pet && !state.pet.dead) {
-          state.pet.happy = clamp(state.pet.happy + 6, 0, 100);
-          if (coinState.wins % 3 === 0) state.pet.gameWins++;
-          saveData();
+          if (coinState.wins % 2 === 0) state.pet.gameWins++;
         }
       } else {
         r.textContent = 'It\'s ' + result + '. Better luck next.';
         r.className = 'coin-result lose';
         coinState.losses++;
-        if (state.pet && !state.pet.dead) {
-          state.pet.happy = clamp(state.pet.happy + 1, 0, 100);
-          saveData();
-        }
+        gain = 9;
+      }
+      if (state.pet && !state.pet.dead) {
+        state.pet.happy = clamp(state.pet.happy + gain, 0, 100);
+        saveData();
       }
       document.getElementById('coin-score').textContent = coinState.wins + '-' + coinState.losses;
       coinState.locked = false;
@@ -1483,10 +1492,10 @@
       tttState.winLine = win;
       tttState.wins++;
       if (state.pet && !state.pet.dead) {
-        state.pet.happy = clamp(state.pet.happy + 12, 0, 100);
+        state.pet.happy = clamp(state.pet.happy + 30, 0, 100);
         state.pet.gameWins++;
         saveData();
-        showToast('Nice! +12 happiness', 'success');
+        showToast('Nice! +30 happiness', 'success');
       }
       redrawTtt();
       return;
@@ -1494,6 +1503,11 @@
     if (tttState.board.every(function(c){ return c; })) {
       tttState.over = true;
       tttState.winner = null;
+      if (state.pet && !state.pet.dead) {
+        state.pet.happy = clamp(state.pet.happy + 15, 0, 100);
+        saveData();
+        showToast('Draw — +15 happiness', 'success');
+      }
       redrawTtt();
       return;
     }
@@ -1542,8 +1556,9 @@
       tttState.winLine = win;
       tttState.losses++;
       if (state.pet && !state.pet.dead) {
-        state.pet.happy = clamp(state.pet.happy + 3, 0, 100);
+        state.pet.happy = clamp(state.pet.happy + 12, 0, 100);
         saveData();
+        showToast('Good game — +12 happiness', 'success');
       }
       redrawTtt();
       return;
@@ -1552,8 +1567,9 @@
       tttState.over = true;
       tttState.winner = null;
       if (state.pet && !state.pet.dead) {
-        state.pet.happy = clamp(state.pet.happy + 4, 0, 100);
+        state.pet.happy = clamp(state.pet.happy + 15, 0, 100);
         saveData();
+        showToast('Draw — +15 happiness', 'success');
       }
       redrawTtt();
       return;
