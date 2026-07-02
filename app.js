@@ -29,6 +29,15 @@
     sickThreshold: 18,         // when any core stat < this for too long
     sickProbabilityPerHour: 0.4, // when conditions are bad
     critForDeathHours: 12,      // health 0 sustained
+    startCoins: 50,
+    mischiefPerHour: 0.22,      // chance/hour of a misbehavior while awake
+    mischiefTimeoutMin: 90,     // ignored misbehavior auto-resolves (with penalty)
+    eventGapHoursMin: 2.5,      // surprise events on the main screen
+    eventGapHoursMax: 5,
+    nightRegenMul: 1.25,        // sleeping at real-world night regens faster
+    boonDecayMul: 0.88,         // legacy boon: -12% stat drain
+    // secret evolution requirements, checked once at teen -> adult
+    secret: { careAvg: 82, discipline: 65, gameWins: 12 },
   };
 
   var STAGES = ['egg','baby','child','teen','adult','senior'];
@@ -299,6 +308,64 @@
     crystal: { baby: buildPet('crystal','baby'), child: buildPet('crystal','child'), teen: buildPet('crystal','teen'), adult: buildPet('crystal','adult') },
   };
 
+  // Secret adult forms: same silhouette, radiant palette + drawn aura.
+  var SECRETPAL = {
+    flame:   { '0':'#4a2000', '1':'#ffc23a', '2':'#fff3b0', '3':'#e07800', '5':'#ffffff', '6':'#3a1000', '7':'#c05000', '4':'#ffffff', '8':'#fff3b0', 'A':'#ffffff', 'B':'#ffffff', 'C':'#ffd83a' },
+    star:    { '0':'#101040', '1':'#bfe2ff', '2':'#ffffff', '3':'#5a7dff', '5':'#ffffff', '6':'#101040', '7':'#3a50a0', '4':'#fff7c0', '8':'#ffffff', 'A':'#fff7c0', 'B':'#fff7c0', 'C':'#9ee0ff' },
+    leaf:    { '0':'#1a3a00', '1':'#b8f070', '2':'#f0ffc0', '3':'#5a9a20', '5':'#ffffff', '6':'#102000', '7':'#3a6a10', '4':'#fff070', '8':'#fff070', 'A':'#fff070', 'B':'#fff070', 'C':'#ffe27a' },
+    crystal: { '0':'#2a0a3a', '1':'#f0c8ff', '2':'#ffffff', '3':'#b06bff', '5':'#ffffff', '6':'#2a0a3a', '7':'#8040c0', '4':'#ffffff', '8':'#ffffff', 'A':'#ffffff', 'B':'#ffe8ff', 'C':'#ff8de8' },
+  };
+  var SECRET_SPRITES = {
+    flame:   { pal: SECRETPAL.flame,   px: ADULT_BODY, w: 16 },
+    star:    { pal: SECRETPAL.star,    px: ADULT_BODY, w: 16 },
+    leaf:    { pal: SECRETPAL.leaf,    px: ADULT_BODY, w: 16 },
+    crystal: { pal: SECRETPAL.crystal, px: ADULT_BODY, w: 16 },
+  };
+
+  // ==================== SHOP CATALOG ====================
+  // Accessories draw as small pixel overlays anchored to the head or eyes.
+  // h = row count; dy = extra cell offset from the anchor (negative = higher).
+  var HEAD_TOP_ROW = { baby: 3, child: 2, teen: 1, adult: 0, senior: 0 };
+  var EYE_ROW      = { baby: 8, child: 7, teen: 7, adult: 6, senior: 6 };
+
+  var ACCESSORIES = {
+    party:  { name: 'Party Hat', icon: '🎉', price: 40, desc: 'For a pet that loves a celebration.',
+              anchor: 'head', dy: 0, h: 4,
+              pal: { '1':'#ff5b9c', '2':'#ffe46a', '5':'#ffffff' },
+              px: ['.......5........',
+                   '.......1........',
+                   '......212.......',
+                   '......121.......'] },
+    bow:    { name: 'Ribbon Bow', icon: '🎀', price: 35, desc: 'Tied with love. Very dignified.',
+              anchor: 'head', dy: 1, h: 2,
+              pal: { '1':'#ff5b9c', '2':'#ff8db8' },
+              px: ['.....12.21......',
+                   '.....11211......'] },
+    shades: { name: 'Cool Shades', icon: '🕶', price: 50, desc: 'Instant +100 style. Zero stat effect.',
+              anchor: 'eyes', dy: 0, h: 2,
+              pal: { '1':'#10101c', '2':'#3a3a55' },
+              px: ['...11211211.....',
+                   '....11...11.....'] },
+    crown:  { name: 'Tiny Crown', icon: '👑', price: 120, desc: 'Rare stock. Fit for royalty.', rare: 0,
+              anchor: 'head', dy: 0, h: 3,
+              pal: { '1':'#ffd83a', '2':'#fff3b0', '4':'#ff5b9c' },
+              px: ['.....1.4.1......',
+                   '.....11111......',
+                   '.....12121......'] },
+    halo:   { name: 'Golden Halo', icon: '😇', price: 150, desc: 'Rare stock. Simply divine.', rare: 1,
+              anchor: 'head', dy: -1, h: 2,
+              pal: { '1':'#ffe46a', '2':'#fff8d0' },
+              px: ['.....12221......',
+                   '....1.....1.....'] },
+  };
+
+  var SHOP_FOODS = [
+    { id: 'cake',  name: 'Honey Cake',  icon: '🍰', price: 18, desc: 'Hunger +30, happiness +12. Weight +2.' },
+    { id: 'salad', name: 'Berry Salad', icon: '🥗', price: 12, desc: 'Hunger +18, light & healthy. Weight -1.' },
+    { id: 'tonic', name: 'Energy Tonic',icon: '🧪', price: 20, desc: 'Energy +35 without a nap.' },
+    { id: 'mystery', name: 'Mystery Meal', icon: '🎁', price: 15, desc: 'Could be anything. Feeling lucky?' },
+  ];
+
 
   // Egg metadata for selection screen
   var EGG_INFO = [
@@ -310,11 +377,12 @@
 
   // Species name table by line + stage + branch ('great'|'good'|'poor')
   var NAMES = {
-    flame:   { baby: 'Embril',   child: 'Sparkling', teen: 'Flarewing', adult: { great: 'Inferno King', good: 'Phoenix',  poor: 'Smolderpaw' } },
-    star:    { baby: 'Twinkle',  child: 'Astrobit',  teen: 'Comet',     adult: { great: 'Galactus',     good: 'Nova Prince', poor: 'Voidwalker' } },
-    leaf:    { baby: 'Sprout',   child: 'Bloomling', teen: 'Vinepaw',   adult: { great: 'Wildking',     good: 'Ancient Oak', poor: 'Bloomshade' } },
-    crystal: { baby: 'Sparkle',  child: 'Crystura',  teen: 'Prismfox',  adult: { great: 'Diamond Lord', good: 'Geode Sage',  poor: 'Obsidiancore' } },
+    flame:   { baby: 'Embril',   child: 'Sparkling', teen: 'Flarewing', adult: { great: 'Inferno King', good: 'Phoenix',  poor: 'Smolderpaw', secret: 'Solar Sovereign' } },
+    star:    { baby: 'Twinkle',  child: 'Astrobit',  teen: 'Comet',     adult: { great: 'Galactus',     good: 'Nova Prince', poor: 'Voidwalker', secret: 'Celestial One' } },
+    leaf:    { baby: 'Sprout',   child: 'Bloomling', teen: 'Vinepaw',   adult: { great: 'Wildking',     good: 'Ancient Oak', poor: 'Bloomshade', secret: 'World Tree Spirit' } },
+    crystal: { baby: 'Sparkle',  child: 'Crystura',  teen: 'Prismfox',  adult: { great: 'Diamond Lord', good: 'Geode Sage',  poor: 'Obsidiancore', secret: 'Prism Deity' } },
   };
+  var LINE_ICONS = { flame: '🔥', star: '⭐', leaf: '🍃', crystal: '💎' };
 
   // ==================== EXTRA SPRITES ====================
   var GHOST = {
@@ -367,12 +435,21 @@
     screenHistory: [],
     // pet state
     pet: null,         // see freshPet()
-    history: [],       // list of past pet summaries
+    history: [],       // list of past pet summaries (Hall of Fame)
+    // economy & meta (persisted, survive pet death)
+    coins: CONFIG.startCoins,
+    streak: { last: '', count: 0 },
+    owned: {},         // accessoryId -> true
+    equipped: null,    // accessoryId or null
+    muted: false,
+    legacy: null,      // {from, line} boon waiting for the next egg
+    nextEventAt: 0,    // next surprise-event timestamp
     // ephemeral
     eggIdx: 0,
     nameDraft: '',
     nameCursor: 0,     // letter grid focus index
     miniGame: null,
+    eventFx: null,     // {type, startedAt, data} canvas effect for events
     // anim
     bouncePhase: 0,
     pendingMood: null, // {icon, text, until}
@@ -380,10 +457,17 @@
 
   function freshPet(eggId, name) {
     var now = Date.now();
+    var gen = state.history.length && state.history[0].gen ? state.history[0].gen + 1 : state.history.length + 1;
+    var boon = state.legacy;   // consume the waiting legacy boon, if any
+    state.legacy = null;
     return {
       id: 'p_' + now.toString(36),
       eggId: eggId,
       name: name,
+      gen: gen,
+      boon: boon,              // {from, line} → slower stat drain
+      secret: false,           // unlocked at teen->adult with exceptional care
+      mischief: null,          // {type: 'beg'|'tantrum'|'sulk', sinceMs}
       bornAt: now,
       lastTickAt: now,
       stage: 'egg',
@@ -427,6 +511,16 @@
     }
   }
   function hoursSince(ms) { return (Date.now() - ms) / 3600000; }
+  // Real-world day phase drives the main-screen scenery and sleep bonus
+  function dayPhase() {
+    var h = new Date().getHours();
+    if (h >= 7 && h < 17) return 'day';
+    if (h >= 17 && h < 20) return 'dusk';
+    return 'night';
+  }
+  function careAvgOf(pet) {
+    return pet.careSamples > 0 ? pet.careSum / pet.careSamples : 70;
+  }
 
   function ageString(pet) {
     if (!pet) return '';
@@ -445,6 +539,14 @@
       state.deviceId = data.deviceId || null;
       state.pet      = data.pet      || null;
       state.history  = data.history  || [];
+      // economy & meta — default for saves created before these existed
+      state.coins    = typeof data.coins === 'number' ? data.coins : CONFIG.startCoins;
+      state.streak   = data.streak   || { last: '', count: 0 };
+      state.owned    = data.owned    || {};
+      state.equipped = data.equipped || null;
+      state.muted    = !!data.muted;
+      state.legacy   = data.legacy   || null;
+      state.nextEventAt = data.nextEventAt || 0;
     } catch (e) { console.error('[load]', e); }
   }
   function saveData() {
@@ -453,8 +555,108 @@
         deviceId: state.deviceId,
         pet: state.pet,
         history: state.history,
+        coins: state.coins,
+        streak: state.streak,
+        owned: state.owned,
+        equipped: state.equipped,
+        muted: state.muted,
+        legacy: state.legacy,
+        nextEventAt: state.nextEventAt,
       }));
     } catch (e) { console.error('[save]', e); }
+  }
+
+  // ==================== SOUND (WebAudio chiptune) ====================
+  // Each effect: array of [freq, startSec, durSec, type?, vol?] notes.
+  var SFX = {
+    move:    [[660, 0, 0.03, 'square', 0.02]],
+    select:  [[740, 0, 0.05, 'square', 0.05], [1108, 0.05, 0.07, 'square', 0.05]],
+    coin:    [[988, 0, 0.05, 'square', 0.06], [1319, 0.05, 0.12, 'square', 0.06]],
+    eat:     [[392, 0, 0.06, 'triangle', 0.08], [330, 0.07, 0.06, 'triangle', 0.08], [440, 0.14, 0.1, 'triangle', 0.08]],
+    clean:   [[880, 0, 0.05, 'sine', 0.06], [1175, 0.06, 0.05, 'sine', 0.06], [1568, 0.12, 0.08, 'sine', 0.06]],
+    heal:    [[523, 0, 0.09, 'triangle', 0.07], [659, 0.1, 0.09, 'triangle', 0.07], [784, 0.2, 0.14, 'triangle', 0.07]],
+    win:     [[523, 0, 0.08, 'square', 0.06], [659, 0.08, 0.08, 'square', 0.06], [784, 0.16, 0.08, 'square', 0.06], [1047, 0.24, 0.18, 'square', 0.07]],
+    lose:    [[330, 0, 0.12, 'square', 0.05], [247, 0.13, 0.2, 'square', 0.05]],
+    evolve:  [[523, 0, 0.1, 'square', 0.06], [659, 0.1, 0.1, 'square', 0.06], [784, 0.2, 0.1, 'square', 0.06], [1047, 0.3, 0.1, 'square', 0.07], [1319, 0.4, 0.26, 'square', 0.07]],
+    event:   [[1319, 0, 0.05, 'sine', 0.06], [1760, 0.06, 0.05, 'sine', 0.06], [2217, 0.12, 0.12, 'sine', 0.05]],
+    scold:   [[196, 0, 0.1, 'square', 0.06], [165, 0.11, 0.14, 'square', 0.06]],
+    comfort: [[523, 0, 0.09, 'sine', 0.07], [659, 0.1, 0.16, 'sine', 0.07]],
+  };
+  var sndCtx = null;
+  function sfx(name) {
+    if (state.muted) return;
+    var notes = SFX[name];
+    if (!notes) return;
+    try {
+      if (!sndCtx) {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        sndCtx = new AC();
+      }
+      if (sndCtx.state === 'suspended') sndCtx.resume();
+      var t0 = sndCtx.currentTime;
+      notes.forEach(function(n) {
+        var osc = sndCtx.createOscillator();
+        var gain = sndCtx.createGain();
+        osc.type = n[3] || 'square';
+        osc.frequency.value = n[0];
+        var vol = n[4] != null ? n[4] : 0.06;
+        var start = t0 + n[1], end = start + n[2];
+        gain.gain.setValueAtTime(vol, start);
+        gain.gain.exponentialRampToValueAtTime(0.001, end);
+        osc.connect(gain); gain.connect(sndCtx.destination);
+        osc.start(start); osc.stop(end + 0.02);
+      });
+    } catch (e) { /* no audio on this device — fine */ }
+  }
+
+  // ==================== COINS & STREAK ====================
+  function addCoins(n, quiet) {
+    state.coins = Math.max(0, state.coins + n);
+    refreshCoinLabels();
+    if (n > 0 && !quiet) sfx('coin');
+    saveData();
+  }
+  function refreshCoinLabels() {
+    var el = document.getElementById('coin-label');
+    if (el) el.textContent = state.coins;
+    var shopEl = document.getElementById('shop-coin-label');
+    if (shopEl) shopEl.textContent = state.coins;
+  }
+  function dayKeyOf(d) {
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+  function checkStreak() {
+    var now = new Date();
+    var today = dayKeyOf(now);
+    if (state.streak.last === today) return;
+    var yesterday = dayKeyOf(new Date(now.getTime() - 86400000));
+    if (state.streak.last === yesterday) {
+      state.streak.count++;
+      var reward = Math.min(5 + state.streak.count * 2, 25);
+      state.streak.last = today;
+      addCoins(reward, true);
+      showToast('🔥 Day ' + state.streak.count + ' streak! +' + reward + ' coins', 'success');
+      sfx('coin');
+    } else {
+      var first = !state.streak.last;
+      state.streak.count = 1;
+      state.streak.last = today;
+      addCoins(5, true);
+      if (!first) showToast('Welcome back! +5 coins', 'success');
+    }
+    saveData();
+    refreshStreakBadge();
+  }
+  function refreshStreakBadge() {
+    var el = document.getElementById('streak-badge');
+    if (!el) return;
+    if (state.streak.count >= 2) {
+      el.classList.remove('hidden');
+      el.textContent = '🔥' + state.streak.count;
+    } else {
+      el.classList.add('hidden');
+    }
   }
 
   // ==================== SPRITE RENDERER ====================
@@ -505,6 +707,44 @@
     ctx.fillStyle = prev;
   }
 
+  // Scene backdrop synced to the real-world clock
+  function drawScene(ctx, w, h, t) {
+    var phase = dayPhase();
+    var grad = ctx.createLinearGradient(0, 0, 0, h);
+    if (phase === 'day') {
+      grad.addColorStop(0, '#0e2a4a');
+      grad.addColorStop(1, '#081420');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+      // pixel sun, top-left
+      ctx.fillStyle = '#ffe46a';
+      ctx.fillRect(64, 40, 36, 36);
+      ctx.fillStyle = '#fff3b0';
+      ctx.fillRect(72, 48, 20, 20);
+    } else if (phase === 'dusk') {
+      grad.addColorStop(0, '#3a1030');
+      grad.addColorStop(0.6, '#40161a');
+      grad.addColorStop(1, '#100810');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, w, h);
+      // low sun on the horizon
+      ctx.fillStyle = '#ff9f43';
+      ctx.fillRect(80, h - 80, 44, 24);
+      drawStars(ctx, w, Math.floor(h / 2), t);
+    } else {
+      // night — starfield + crescent moon
+      drawStars(ctx, w, h, t);
+      ctx.fillStyle = '#e8ecff';
+      ctx.beginPath();
+      ctx.arc(w - 90, 64, 24, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#0a0a14';
+      ctx.beginPath();
+      ctx.arc(w - 80, 58, 20, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
   // Ground line
   function drawGround(ctx, x, y, w) {
     ctx.fillStyle = 'rgba(0, 212, 255, 0.18)';
@@ -544,14 +784,31 @@
 
     // Decay
     var stageMul = stage === 'baby' ? 1.2 : stage === 'senior' ? 0.7 : 1.0;
+    if (pet.boon) stageMul *= CONFIG.boonDecayMul;   // legacy boon: slower drain
     pet.hunger = clamp(pet.hunger - CONFIG.decay.hunger * dtH * stageMul, 0, 100);
     pet.happy  = clamp(pet.happy  - CONFIG.decay.happy  * dtH * stageMul, 0, 100);
     pet.clean  = clamp(pet.clean  - CONFIG.decay.clean  * dtH * stageMul, 0, 100);
     if (pet.asleep) {
-      pet.energy = clamp(pet.energy + CONFIG.decay.sleepRegen * dtH, 0, 100);
+      var regen = CONFIG.decay.sleepRegen * (dayPhase() === 'night' ? CONFIG.nightRegenMul : 1);
+      pet.energy = clamp(pet.energy + regen * dtH, 0, 100);
       if (pet.energy >= 99) pet.asleep = false;
     } else {
       pet.energy = clamp(pet.energy - CONFIG.decay.energy * dtH * stageMul, 0, 100);
+    }
+
+    // Misbehavior: occasionally the pet acts up and wants a response
+    if (!pet.asleep && !pet.dead) {
+      if (pet.mischief) {
+        if ((now - pet.mischief.sinceMs) / 60000 > CONFIG.mischiefTimeoutMin) {
+          // ignored — pet resolves it badly on its own
+          pet.mischief = null;
+          pet.discipline = clamp(pet.discipline - 6, 0, 100);
+          pet.happy = clamp(pet.happy - 4, 0, 100);
+        }
+      } else if (Math.random() < CONFIG.mischiefPerHour * dtH) {
+        var mType = pet.happy < 40 ? 'sulk' : (Math.random() < 0.5 ? 'beg' : 'tantrum');
+        pet.mischief = { type: mType, sinceMs: now };
+      }
     }
 
     // Poop schedule
@@ -615,10 +872,12 @@
   }
 
   function computeBranch(pet) {
-    var avg = pet.careSamples > 0 ? pet.careSum / pet.careSamples : 70;
+    if (pet.secret) return 'secret';
+    var avg = careAvgOf(pet);
     var winsBoost = Math.min(20, pet.gameWins * 2);
     var neglectPen = Math.min(30, pet.neglectMin / 60); // hours of neglect
-    var score = avg + winsBoost - neglectPen;
+    var discMod = (pet.discipline - 50) / 5;            // -10 .. +10
+    var score = avg + winsBoost - neglectPen + discMod;
     if (score >= 80) return 'great';
     if (score >= 55) return 'good';
     return 'poor';
@@ -641,14 +900,23 @@
     if (pet.dead) return GHOST;
     if (pet.stage === 'egg') return EGGS[pet.eggId];
     var stageKey = pet.stage === 'senior' ? 'adult' : pet.stage;
+    if (stageKey === 'adult' && pet.branch === 'secret') return SECRET_SPRITES[pet.eggId];
     return STAGE_SPRITES[pet.eggId][stageKey];
   }
 
   function onStageChanged(pet, from, to) {
+    // Secret evolution check: exactly once, at the moment of becoming adult
+    if (to === 'adult' && from !== 'adult') {
+      var req = CONFIG.secret;
+      if (careAvgOf(pet) >= req.careAvg && pet.discipline >= req.discipline && pet.gameWins >= req.gameWins) {
+        pet.secret = true;
+        pet.branch = 'secret';
+      }
+    }
     if (from === 'egg' && to === 'baby') {
       showEvolveScreen('Hatched!', pet);
     } else if (to !== 'senior' && to !== 'egg') {
-      showEvolveScreen('Evolved!', pet);
+      showEvolveScreen(pet.secret && to === 'adult' ? '✦ Secret Evolution ✦' : 'Evolved!', pet);
     }
   }
 
@@ -657,17 +925,25 @@
     pet.dead = true;
     pet.deathReason = reason;
     pet.diedAt = Date.now();
+    var careAvg = Math.round(careAvgOf(pet));
     state.history.unshift({
       name: pet.name,
       eggId: pet.eggId,
       branch: pet.branch,
+      gen: pet.gen || state.history.length + 1,
+      careAvg: careAvg,
       bornAt: pet.bornAt,
       diedAt: pet.diedAt,
       finalStage: pet.stage,
       reason: reason,
       finalName: petDisplayName(pet),
     });
-    if (state.history.length > 12) state.history.length = 12;
+    if (state.history.length > 30) state.history.length = 30;
+    // A well-raised pet blesses the next egg with a legacy boon
+    if (careAvg >= 70 || pet.stage === 'senior' || pet.branch === 'secret') {
+      state.legacy = { from: pet.name, line: pet.eggId };
+    }
+    sfx('lose');
     saveData();
     navigateTo('death', { addToHistory: false });
   }
@@ -683,8 +959,8 @@
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.imageSmoothingEnabled = false;
 
-    // background
-    drawStars(ctx, canvas.width, canvas.height, animT);
+    // background — follows the real-world clock
+    drawScene(ctx, canvas.width, canvas.height, animT);
     drawGround(ctx, 40, canvas.height - 30, canvas.width - 80);
 
     // pet sprite (16x16 base scaled up)
@@ -701,7 +977,28 @@
         : 0;
       // egg wobble
       if (pet && pet.stage === 'egg') bounce = Math.sin(animT / 240) * 2;
+
+      // secret forms radiate a pulsing golden aura
+      if (pet && !pet.dead && pet.branch === 'secret' && pet.stage !== 'egg') {
+        var pulse = 0.18 + 0.1 * Math.abs(Math.sin(animT / 500));
+        var aura = ctx.createRadialGradient(
+          bx + spriteW / 2, by + spriteH / 2 + bounce, 30,
+          bx + spriteW / 2, by + spriteH / 2 + bounce, spriteW * 0.75);
+        aura.addColorStop(0, 'rgba(255, 226, 122, ' + pulse + ')');
+        aura.addColorStop(1, 'rgba(255, 226, 122, 0)');
+        ctx.fillStyle = aura;
+        ctx.fillRect(bx - spriteW / 2, by - spriteH / 2, spriteW * 2, spriteH * 2);
+      }
+
       drawSprite(ctx, sprite, bx, by + bounce, scale);
+
+      // equipped accessory overlay (not on eggs or ghosts)
+      if (pet && !pet.dead && pet.stage !== 'egg' && state.equipped && ACCESSORIES[state.equipped]) {
+        var acc = ACCESSORIES[state.equipped];
+        var anchorRow = acc.anchor === 'eyes' ? EYE_ROW[pet.stage] : HEAD_TOP_ROW[pet.stage] - acc.h + 1;
+        var accY = by + bounce + (anchorRow + acc.dy) * scale;
+        drawSprite(ctx, { pal: acc.pal, px: acc.px, w: 16, h: acc.h }, bx, accY, scale);
+      }
 
       // sleep overlay
       if (pet && pet.asleep) {
@@ -728,6 +1025,93 @@
         drawSprite(ctx, POOP, startX + i * 80, canvas.height - 80, 4);
       }
     }
+
+    drawEventFx(ctx, canvas.width, canvas.height);
+  }
+
+  // Transient canvas effects for surprise events
+  function drawEventFx(ctx, w, h) {
+    var fx = state.eventFx;
+    if (!fx) return;
+    var elapsed = Date.now() - fx.startedAt;
+    if (fx.type === 'star') {
+      // shooting star streaking across the top
+      var dur = 2200;
+      if (elapsed > dur) { state.eventFx = null; return; }
+      var p = elapsed / dur;
+      var sx = -40 + p * (w + 80);
+      var sy = 40 + p * 90;
+      ctx.fillStyle = '#fff7c0';
+      ctx.fillRect(sx, sy, 8, 8);
+      for (var i = 1; i <= 5; i++) {
+        ctx.globalAlpha = 0.5 - i * 0.09;
+        ctx.fillRect(sx - i * 14, sy - i * 5, 6, 6);
+      }
+      ctx.globalAlpha = 1;
+    } else if (fx.type === 'visitor') {
+      // a wild baby pet wanders across the ground
+      var vDur = 4200;
+      if (elapsed > vDur) { state.eventFx = null; return; }
+      var vp = elapsed / vDur;
+      var vx = -100 + vp * (w + 120);
+      var vy = h - 8 * 16 - 26 + Math.abs(Math.sin(elapsed / 160)) * -6;
+      drawSprite(ctx, STAGE_SPRITES[fx.data.line].baby, vx, vy, 8);
+    } else if (fx.type === 'sparkle') {
+      // coin / gift sparkles above the pet
+      var sDur = 1600;
+      if (elapsed > sDur) { state.eventFx = null; return; }
+      for (var j = 0; j < 6; j++) {
+        var a = (j * 60 + elapsed / 4) * Math.PI / 180;
+        var r = 40 + (elapsed / sDur) * 50;
+        ctx.globalAlpha = 1 - elapsed / sDur;
+        ctx.fillStyle = j % 2 ? '#ffe46a' : '#ffffff';
+        ctx.fillRect(w / 2 + Math.cos(a) * r - 3, h / 2 - 60 + Math.sin(a) * r - 3, 6, 6);
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  // ==================== SURPRISE EVENTS ====================
+  function scheduleNextEvent(now) {
+    state.nextEventAt = now + randRange(CONFIG.eventGapHoursMin, CONFIG.eventGapHoursMax) * 3600 * 1000;
+  }
+  function maybeTriggerEvent() {
+    var pet = state.pet;
+    var now = Date.now();
+    if (!pet || pet.dead || pet.stage === 'egg' || pet.asleep) return;
+    if (state.currentScreen !== 'main') return;
+    if (!state.nextEventAt) { scheduleNextEvent(now); saveData(); return; }
+    if (now < state.nextEventAt) return;
+    scheduleNextEvent(now);
+
+    var roll = Math.random();
+    if (roll < 0.35) {
+      var found = 5 + Math.floor(Math.random() * 11);
+      state.eventFx = { type: 'sparkle', startedAt: now };
+      addCoins(found, true);
+      showToast('✨ ' + pet.name + ' found ' + found + ' coins!', 'success');
+      sfx('event');
+    } else if (roll < 0.6) {
+      state.eventFx = { type: 'star', startedAt: now };
+      pet.happy = clamp(pet.happy + 10, 0, 100);
+      addCoins(5, true);
+      showToast('🌠 A shooting star! +10 happiness, +5 coins', 'success');
+      sfx('event');
+    } else if (roll < 0.85) {
+      var lines = ['flame', 'star', 'leaf', 'crystal'].filter(function(l) { return l !== pet.eggId; });
+      var visitor = lines[Math.floor(Math.random() * lines.length)];
+      state.eventFx = { type: 'visitor', startedAt: now, data: { line: visitor } };
+      pet.happy = clamp(pet.happy + 8, 0, 100);
+      showToast('👋 A wild ' + NAMES[visitor].baby + ' stopped by to play! +8 happiness', 'success');
+      sfx('event');
+    } else {
+      pet.hunger = clamp(pet.hunger + 12, 0, 100);
+      state.eventFx = { type: 'sparkle', startedAt: now };
+      showToast('🎁 A neighbor left a snack. +12 hunger', 'success');
+      sfx('event');
+    }
+    saveData();
+    refreshMainUI();
   }
 
   function renderEggCanvas() {
@@ -850,6 +1234,59 @@
     } else {
       bubble.classList.add('hidden');
     }
+
+    refreshCoinLabels();
+    refreshStreakBadge();
+
+    // misbehavior prompt
+    var bar = document.getElementById('mischief-bar');
+    if (bar) {
+      if (pet.mischief && !pet.asleep && !pet.dead) {
+        var mLabel = pet.mischief.type === 'beg' ? pet.name + ' is begging for snacks!'
+                   : pet.mischief.type === 'tantrum' ? pet.name + ' is throwing a tantrum!'
+                   : pet.name + ' is sulking…';
+        document.getElementById('mischief-label').textContent = mLabel;
+        bar.classList.remove('hidden');
+      } else {
+        bar.classList.add('hidden');
+      }
+    }
+  }
+
+  // Respond to an active misbehavior. Sulking wants comfort; begging and
+  // tantrums want a firm scolding. The wrong call spoils or upsets the pet.
+  function respondMischief(response) {
+    var pet = state.pet;
+    if (!pet || !pet.mischief) return;
+    var type = pet.mischief.type;
+    pet.mischief = null;
+    var correct = (type === 'sulk') ? (response === 'comfort') : (response === 'scold');
+    if (correct) {
+      if (response === 'comfort') {
+        pet.discipline = clamp(pet.discipline + 8, 0, 100);
+        pet.happy = clamp(pet.happy + 6, 0, 100);
+        showToast('You comforted ' + pet.name + '. Discipline +8', 'success');
+        sfx('comfort');
+      } else {
+        pet.discipline = clamp(pet.discipline + 10, 0, 100);
+        showToast('Firm but fair. Discipline +10', 'success');
+        sfx('scold');
+      }
+    } else {
+      if (response === 'comfort') {
+        pet.discipline = clamp(pet.discipline - 8, 0, 100);
+        pet.happy = clamp(pet.happy + 4, 0, 100);
+        showToast('Spoiled! It was faking. Discipline -8', 'warn');
+        sfx('comfort');
+      } else {
+        pet.discipline = clamp(pet.discipline + 2, 0, 100);
+        pet.happy = clamp(pet.happy - 10, 0, 100);
+        showToast('It was genuinely sad… Happiness -10', 'error');
+        sfx('scold');
+      }
+    }
+    saveData();
+    refreshMainUI();
   }
 
   function computeMood(pet) {
@@ -859,13 +1296,19 @@
       var pct = Math.min(100, Math.round((h / CONFIG.stageHours.egg) * 100));
       return { icon: '🥚', text: 'Hatching · ' + pct + '%' };
     }
-    if (pet.asleep) return { icon: '💤', text: 'Sleeping' };
+    if (pet.asleep) return { icon: '💤', text: dayPhase() === 'night' ? 'Deep night sleep' : 'Sleeping' };
     if (pet.sick)   return { icon: '🤒', text: 'Feeling sick' };
+    if (pet.mischief) {
+      if (pet.mischief.type === 'beg')     return { icon: '🥺', text: 'Begging for snacks' };
+      if (pet.mischief.type === 'tantrum') return { icon: '😤', text: 'Tantrum in progress!' };
+      return { icon: '😔', text: 'Sulking…' };
+    }
     if (pet.poops.length >= 2) return { icon: '🧹', text: 'Needs cleaning!' };
     if (pet.hunger < 25) return { icon: '🍽', text: 'Very hungry' };
     if (pet.happy  < 25) return { icon: '😢', text: 'Wants to play' };
     if (pet.clean  < 25) return { icon: '🧼', text: 'Feeling messy' };
     if (pet.energy < 20) return { icon: '🥱', text: 'Sleepy' };
+    if (dayPhase() === 'night' && pet.energy < 60) return { icon: '🌙', text: 'Getting late…' };
     if (pet.hunger > 70 && pet.happy > 70 && pet.clean > 70) {
       return { icon: '✨', text: 'Loving life' };
     }
@@ -905,6 +1348,9 @@
             '<div class="bio-cell"><div class="bio-label">Game wins</div><div class="bio-value">' + pet.gameWins + '</div></div>' +
             '<div class="bio-cell"><div class="bio-label">Care score</div><div class="bio-value">' + avgCare + '/100</div></div>' +
             '<div class="bio-cell"><div class="bio-label">Sick?</div><div class="bio-value">' + (pet.sick ? 'Yes' : 'No') + '</div></div>' +
+            '<div class="bio-cell"><div class="bio-label">Generation</div><div class="bio-value">' + (pet.gen || 1) + '</div></div>' +
+            '<div class="bio-cell"><div class="bio-label">Lineage boon</div><div class="bio-value">' +
+              (pet.boon ? '✨ ' + pet.boon.from + ' (-12% drain)' : 'None') + '</div></div>' +
             '</div>';
     content.innerHTML = html;
   }
@@ -975,6 +1421,7 @@
     });
     if (best) {
       best.focus();
+      sfx('move');
       var sp = best.closest('.content, .list-container, .letter-grid');
       if (sp) best.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     } else {
@@ -986,7 +1433,9 @@
   }
 
   function onScreenEnter(id) {
-    if (id === 'main') refreshMainUI();
+    if (id === 'main') { checkStreak(); refreshMainUI(); }
+    if (id === 'shop') renderShop();
+    if (id === 'album') renderAlbum();
     if (id === 'stats') renderStatsScreen();
     if (id === 'name-pet') {
       state.nameDraft = '';
@@ -1048,6 +1497,147 @@
     document.getElementById('name-display').textContent = disp;
   }
 
+  // ==================== SHOP ====================
+  // Rare accessories rotate stock by day: crown on even days, halo on odd.
+  function rareInStockToday() {
+    var doy = Math.floor(Date.now() / 86400000);
+    return doy % 2 === 0 ? 'crown' : 'halo';
+  }
+
+  function renderShop() {
+    refreshCoinLabels();
+    var content = document.getElementById('shop-content');
+    var html = '<div class="shop-section-label">Treats</div>';
+    SHOP_FOODS.forEach(function(f) {
+      var afford = state.coins >= f.price;
+      html += '<button class="big-action focusable shop-row' + (afford ? '' : ' cant-afford') + '" ' +
+              'data-action="shop-food" data-item="' + f.id + '">' +
+              '<div class="big-action-icon">' + f.icon + '</div>' +
+              '<div class="big-action-body">' +
+              '<div class="big-action-title">' + f.name + '</div>' +
+              '<div class="big-action-sub">' + f.desc + '</div>' +
+              '</div>' +
+              '<div class="shop-price">🪙 ' + f.price + '</div>' +
+              '</button>';
+    });
+    html += '<div class="shop-section-label">Accessories</div>';
+    var rareToday = rareInStockToday();
+    Object.keys(ACCESSORIES).forEach(function(id) {
+      var a = ACCESSORIES[id];
+      var owned = !!state.owned[id];
+      // rare items only appear in the shop on their stock day (once owned, always listed)
+      if (a.rare != null && !owned && id !== rareToday) return;
+      var equipped = state.equipped === id;
+      var afford = state.coins >= a.price;
+      var priceHtml = owned
+        ? '<div class="shop-price owned">' + (equipped ? 'Equipped ✓' : 'Equip') + '</div>'
+        : '<div class="shop-price">🪙 ' + a.price + '</div>';
+      html += '<button class="big-action focusable shop-row' + (!owned && !afford ? ' cant-afford' : '') + (equipped ? ' equipped' : '') + '" ' +
+              'data-action="shop-acc" data-item="' + id + '">' +
+              '<div class="big-action-icon">' + a.icon + '</div>' +
+              '<div class="big-action-body">' +
+              '<div class="big-action-title">' + a.name + (a.rare != null ? ' <span class="rare-tag">RARE</span>' : '') + '</div>' +
+              '<div class="big-action-sub">' + a.desc + '</div>' +
+              '</div>' + priceHtml + '</button>';
+    });
+    html += '<div class="shop-footer">Rare stock rotates daily. Earn coins from games, streaks & events.</div>';
+    content.innerHTML = html;
+  }
+
+  function buyFood(id) {
+    var pet = state.pet;
+    var item = null;
+    SHOP_FOODS.forEach(function(f) { if (f.id === id) item = f; });
+    if (!item) return;
+    if (!pet || pet.dead || pet.stage === 'egg') { showToast('No pet to feed right now.', 'warn'); return; }
+    if (pet.asleep) { showToast('They\'re asleep — let them rest.', 'warn'); return; }
+    if (state.coins < item.price) { showToast('Not enough coins.', 'error'); return; }
+    addCoins(-item.price, true);
+    if (id === 'cake') {
+      pet.hunger = clamp(pet.hunger + 30, 0, 100);
+      pet.happy = clamp(pet.happy + 12, 0, 100);
+      pet.weight += 2;
+      pet.feedings++;
+      showToast('🍰 Delicious! Hunger +30, happiness +12', 'success');
+    } else if (id === 'salad') {
+      pet.hunger = clamp(pet.hunger + 18, 0, 100);
+      pet.weight = Math.max(1, pet.weight - 1);
+      pet.clean = clamp(pet.clean + 4, 0, 100);
+      pet.feedings++;
+      showToast('🥗 Healthy choice! Hunger +18, weight -1', 'success');
+    } else if (id === 'tonic') {
+      pet.energy = clamp(pet.energy + 35, 0, 100);
+      showToast('🧪 Zing! Energy +35', 'success');
+    } else if (id === 'mystery') {
+      var r = Math.random();
+      if (r < 0.15) {
+        var refund = item.price + 10;
+        addCoins(refund, true);
+        showToast('🎁 The box was full of coins! +' + refund, 'success');
+      } else if (r < 0.55) {
+        pet.hunger = clamp(pet.hunger + 35, 0, 100);
+        pet.happy = clamp(pet.happy + 10, 0, 100);
+        pet.feedings++;
+        showToast('🎁 A feast! Hunger +35, happiness +10', 'success');
+      } else {
+        pet.hunger = clamp(pet.hunger + 10, 0, 100);
+        pet.feedings++;
+        showToast('🎁 Hmm, stale crackers. Hunger +10', 'warn');
+      }
+    }
+    sfx('eat');
+    saveData();
+    renderShop();
+  }
+
+  function buyOrEquipAccessory(id) {
+    var a = ACCESSORIES[id];
+    if (!a) return;
+    if (state.owned[id]) {
+      state.equipped = state.equipped === id ? null : id;
+      showToast(state.equipped ? a.icon + ' ' + a.name + ' equipped!' : a.name + ' removed.', 'success');
+      sfx('select');
+    } else {
+      if (state.coins < a.price) { showToast('Not enough coins.', 'error'); return; }
+      addCoins(-a.price, true);
+      state.owned[id] = true;
+      state.equipped = id;
+      showToast(a.icon + ' ' + a.name + ' — yours! Equipped.', 'success');
+      sfx('win');
+    }
+    saveData();
+    renderShop();
+  }
+
+  // ==================== HALL OF FAME ====================
+  function renderAlbum() {
+    var content = document.getElementById('album-content');
+    if (!state.history.length) {
+      content.innerHTML = '<div class="album-empty">No pets remembered yet.<br>Raise your first friend and their story will live here.</div>';
+      return;
+    }
+    var html = '';
+    state.history.forEach(function(h) {
+      var lived = Math.max(0, h.diedAt - h.bornAt);
+      var days = Math.floor(lived / 86400000);
+      var hours = Math.floor((lived % 86400000) / 3600000);
+      var cause = h.reason === 'oldage' ? '☀ Passed of old age' : '🥀 Lost to illness';
+      var secret = h.branch === 'secret' ? ' <span class="rare-tag">✦ SECRET</span>' : '';
+      html += '<div class="album-row">' +
+              '<div class="album-icon">' + (LINE_ICONS[h.eggId] || '🥚') + '</div>' +
+              '<div class="album-body">' +
+              '<div class="album-title">' + h.name + ' · ' + (h.finalName || h.finalStage) + secret + '</div>' +
+              '<div class="album-sub">Gen ' + (h.gen || '?') + ' · lived ' + days + 'd ' + hours + 'h · care ' +
+                (h.careAvg != null ? h.careAvg + '/100' : '—') + '</div>' +
+              '<div class="album-sub">' + cause + '</div>' +
+              '</div></div>';
+    });
+    if (state.legacy) {
+      html += '<div class="album-legacy">✨ ' + state.legacy.from + '\'s spirit will bless your next egg.</div>';
+    }
+    content.innerHTML = html;
+  }
+
   // ==================== ACTIONS ====================
   function feed(kind) {
     var pet = state.pet;
@@ -1058,6 +1648,7 @@
       pet.hunger = clamp(pet.hunger + 40, 0, 100);
       pet.weight += 1;
       pet.feedings++;
+      sfx('eat');
       showToast('Full belly!', 'success');
     } else if (kind === 'snack') {
       if (pet.hunger > 95) { showToast('Already stuffed.', 'warn'); return; }
@@ -1065,6 +1656,7 @@
       pet.happy  = clamp(pet.happy + 10, 0, 100);
       pet.weight += 1;
       pet.feedings++;
+      sfx('eat');
       showToast('Yummy!', 'success');
     } else if (kind === 'water') {
       pet.hunger = clamp(pet.hunger + 5, 0, 100);
@@ -1086,6 +1678,7 @@
       pet.poops = [];
       pet.clean = clamp(pet.clean + 40, 0, 100);
       pet.cleanings++;
+      sfx('clean');
       showToast('Cleaned up ' + cleaned + ' mess' + (cleaned > 1 ? 'es' : '') + '!', 'success');
     }
     saveData();
@@ -1117,6 +1710,7 @@
     pet.sick = false;
     pet.sickSinceMs = 0;
     pet.health = clamp(pet.health + 25, 0, 100);
+    sfx('heal');
     showToast('Feeling better!', 'success');
     saveData();
     refreshMainUI();
@@ -1198,13 +1792,17 @@
     if (state.pet && !state.pet.dead) {
       // Generous: baseline +12 for playing, +10 per round survived.
       var gain = 12 + rounds * 10;
+      var coins = rounds * 2;
       state.pet.happy = clamp(state.pet.happy + gain, 0, 100);
       state.pet.energy = clamp(state.pet.energy - rounds, 0, 100);
+      if (coins > 0) addCoins(coins, true);
       if (rounds >= 3) {
         state.pet.gameWins++;
-        showToast('Great session! +' + gain + ' happiness', 'success');
+        showToast('Great session! +' + gain + ' happiness, +' + coins + ' coins', 'success');
+        sfx('win');
       } else {
-        showToast('+' + gain + ' happiness', 'success');
+        showToast('+' + gain + ' happiness' + (coins ? ', +' + coins + ' coins' : ''), 'success');
+        sfx('lose');
       }
       saveData();
     }
@@ -1279,9 +1877,11 @@
     if (state.pet && !state.pet.dead) {
       // Generous: baseline +15 for playing, +10 per hit.
       var gain = 15 + rs.hits * 10;
+      var coins = 1 + rs.hits * 2;
       state.pet.happy = clamp(state.pet.happy + gain, 0, 100);
-      if (rs.hits >= 3) state.pet.gameWins++;
-      showToast('+' + gain + ' happiness', 'success');
+      addCoins(coins, true);
+      if (rs.hits >= 3) { state.pet.gameWins++; sfx('win'); } else sfx('lose');
+      showToast('+' + gain + ' happiness, +' + coins + ' coins', 'success');
       saveData();
     }
     reactionState = null;
@@ -1310,10 +1910,13 @@
       if (state.pet && !state.pet.dead) {
         // Always +25 minimum for winning, faster solve = bonus up to +20.
         var bonus = 25 + Math.max(0, 20 - guessState.tries * 2);
+        var coins = Math.max(4, 14 - guessState.tries);
         state.pet.happy = clamp(state.pet.happy + bonus, 0, 100);
+        addCoins(coins, true);
         if (guessState.tries <= 7) state.pet.gameWins++;
+        sfx('win');
         saveData();
-        showToast('+' + bonus + ' happiness', 'success');
+        showToast('+' + bonus + ' happiness, +' + coins + ' coins', 'success');
       }
       guessState = null;
     } else if (guessState.guess < guessState.target) {
@@ -1362,6 +1965,8 @@
         r.className = 'rps-result win';
         gain = 15;
         rpsState.wins++;
+        addCoins(4, true);
+        sfx('win');
         if (state.pet && !state.pet.dead) {
           if (rpsState.wins % 2 === 0) state.pet.gameWins++;
         }
@@ -1370,7 +1975,9 @@
         r.className = 'rps-result lose';
         gain = 7;
         rpsState.losses++;
+        sfx('lose');
       }
+      if (pet === choice) addCoins(1, true);
       if (state.pet && !state.pet.dead) {
         state.pet.happy = clamp(state.pet.happy + gain, 0, 100);
         saveData();
@@ -1407,10 +2014,12 @@
       var r = document.getElementById('coin-result');
       var gain;
       if (result === call) {
-        r.textContent = 'It\'s ' + result + '! You called it.';
+        r.textContent = 'It\'s ' + result + '! You called it. +5 coins';
         r.className = 'coin-result win';
         coinState.wins++;
         gain = 18;
+        addCoins(5, true);
+        sfx('coin');
         if (state.pet && !state.pet.dead) {
           if (coinState.wins % 2 === 0) state.pet.gameWins++;
         }
@@ -1419,6 +2028,7 @@
         r.className = 'coin-result lose';
         coinState.losses++;
         gain = 9;
+        sfx('lose');
       }
       if (state.pet && !state.pet.dead) {
         state.pet.happy = clamp(state.pet.happy + gain, 0, 100);
@@ -1494,8 +2104,10 @@
       if (state.pet && !state.pet.dead) {
         state.pet.happy = clamp(state.pet.happy + 30, 0, 100);
         state.pet.gameWins++;
+        addCoins(8, true);
+        sfx('win');
         saveData();
-        showToast('Nice! +30 happiness', 'success');
+        showToast('Nice! +30 happiness, +8 coins', 'success');
       }
       redrawTtt();
       return;
@@ -1505,8 +2117,9 @@
       tttState.winner = null;
       if (state.pet && !state.pet.dead) {
         state.pet.happy = clamp(state.pet.happy + 15, 0, 100);
+        addCoins(3, true);
         saveData();
-        showToast('Draw — +15 happiness', 'success');
+        showToast('Draw — +15 happiness, +3 coins', 'success');
       }
       redrawTtt();
       return;
@@ -1557,6 +2170,7 @@
       tttState.losses++;
       if (state.pet && !state.pet.dead) {
         state.pet.happy = clamp(state.pet.happy + 12, 0, 100);
+        sfx('lose');
         saveData();
         showToast('Good game — +12 happiness', 'success');
       }
@@ -1568,8 +2182,9 @@
       tttState.winner = null;
       if (state.pet && !state.pet.dead) {
         state.pet.happy = clamp(state.pet.happy + 15, 0, 100);
+        addCoins(3, true);
         saveData();
-        showToast('Draw — +15 happiness', 'success');
+        showToast('Draw — +15 happiness, +3 coins', 'success');
       }
       redrawTtt();
       return;
@@ -1606,25 +2221,30 @@
     if (state.currentScreen !== 'evolve') {
       navigateTo('evolve', { addToHistory: false });
       document.querySelector('.evolve-title').textContent = title;
+      sfx('evolve');
     }
   }
 
   // ==================== SETTINGS ====================
   function refreshSettingsUI() {
     document.getElementById('device-id-label').textContent = state.deviceId || '—';
-    var historyEl = document.getElementById('history-label');
-    if (!state.history.length) {
-      historyEl.textContent = 'No pets yet';
-    } else {
-      historyEl.innerHTML = state.history.slice(0, 5).map(function(h) {
-        return h.name + ' · ' + h.finalName + ' · ' + h.finalStage;
-      }).join('<br>');
-    }
+    var soundEl = document.getElementById('sound-label');
+    if (soundEl) soundEl.textContent = state.muted ? 'Off' : 'On';
+    var streakEl = document.getElementById('streak-label');
+    if (streakEl) streakEl.textContent = state.streak.count >= 1
+      ? '🔥 ' + state.streak.count + ' day' + (state.streak.count > 1 ? 's' : '')
+      : '—';
   }
 
   function resetEverything() {
     state.pet = null;
     state.history = [];
+    state.coins = CONFIG.startCoins;
+    state.streak = { last: '', count: 0 };
+    state.owned = {};
+    state.equipped = null;
+    state.legacy = null;
+    state.nextEventAt = 0;
     saveData();
     navigateTo('welcome', { addToHistory: false });
   }
@@ -1668,14 +2288,33 @@
         // clear history so back doesn't return to naming flow
         state.screenHistory = [];
         navigateTo('main', { addToHistory: false });
+        if (state.pet.boon) {
+          showToast('✨ ' + state.pet.boon.from + '\'s spirit watches over this egg.', 'success');
+        }
         break;
 
       case 'act-feed': navigateTo('feed'); break;
       case 'act-play': navigateTo('play'); break;
+      case 'act-shop': navigateTo('shop'); break;
       case 'act-clean': clean(); break;
       case 'act-sleep': sleep(); break;
       case 'act-medicine': medicine(); break;
       case 'act-stats': navigateTo('stats'); break;
+
+      case 'shop-food': buyFood(el.dataset.item); break;
+      case 'shop-acc': buyOrEquipAccessory(el.dataset.item); break;
+
+      case 'open-album': navigateTo('album'); break;
+
+      case 'mischief-comfort': respondMischief('comfort'); break;
+      case 'mischief-scold': respondMischief('scold'); break;
+
+      case 'settings-sound':
+        state.muted = !state.muted;
+        saveData();
+        refreshSettingsUI();
+        if (!state.muted) sfx('select');
+        break;
 
       case 'feed-meal': feed('meal'); navigateBack(); break;
       case 'feed-snack': feed('snack'); navigateBack(); break;
@@ -1745,7 +2384,7 @@
         return;
       }
       var el = e.target.closest('[data-action]');
-      if (el) handleAction(el.dataset.action, el);
+      if (el) { sfx('select'); handleAction(el.dataset.action, el); }
     });
 
     document.addEventListener('keydown', function(e) {
@@ -1781,6 +2420,7 @@
     animT = (animT + 1000/30) | 0;
     if (state.pet && !state.pet.dead) {
       tickPet(now);
+      maybeTriggerEvent();
       if (state.currentScreen === 'main') refreshMainUI();
     }
     if (state.currentScreen === 'main') renderMain();
@@ -1790,12 +2430,30 @@
     if (state.currentScreen === 'death') renderDeath();
   }
 
+  // ==================== RESPONSIVE FIT ====================
+  // The app is authored at a fixed 600x600 logical size so all layout and HUD
+  // math stays in that coordinate space. Here we scale the whole #app box by
+  // the limiting viewport dimension — largest scale that fits without cropping —
+  // and CSS flexbox centers it. On a 600x600 screen (the glasses) the scale is 1.
+  var LOGICAL_W = 600, LOGICAL_H = 600;
+  function fitToViewport() {
+    if (!window.innerWidth || !window.innerHeight) return; // ignore transient 0-size resizes
+    var s = Math.min(window.innerWidth / LOGICAL_W, window.innerHeight / LOGICAL_H);
+    var app = document.getElementById('app');
+    if (app) app.style.transform = 'scale(' + s + ')';
+  }
+
   // ==================== INIT ====================
   function init() {
     collectScreens();
     setupEvents();
+    fitToViewport();
+    window.addEventListener('resize', fitToViewport);
+    window.addEventListener('orientationchange', fitToViewport);
     loadData();
     if (!state.deviceId) { state.deviceId = uid(); saveData(); }
+    checkStreak();
+    if (!state.nextEventAt) scheduleNextEvent(Date.now());
 
     setInterval(loop, 1000/30);
     setInterval(saveData, 10000);

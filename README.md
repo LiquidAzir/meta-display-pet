@@ -2,11 +2,17 @@
 
 A Tamagotchi-style virtual pet for Meta Ray-Ban Display smart glasses.
 
-- 600x600 dark-theme webapp, D-pad navigation
+- 600x600 dark-theme webapp, D-pad navigation (centered/scaled on desktop & phone)
 - 4 hatchable egg lines (Flame / Star / Leaf / Crystal)
 - Real-time ~7-day lifecycle: Egg → Baby → Child → Teen → Adult → Senior
-- Care-quality branching evolution
-- 3 mini-games for play (Echo Dance / Star Catch / Hi-Lo)
+- Care-quality branching evolution — plus a hidden secret form per line
+- 6 mini-games (RPS / Coin Flip / Tic Tac Toe / Echo Dance / Star Catch / Hi-Lo)
+- Coin economy: game payouts, daily check-in streaks, surprise events
+- Shop with treats and equippable pixel accessories (rare stock rotates daily)
+- Discipline system: comfort or scold misbehaving pets — it shapes evolution
+- Generations: Hall of Fame album; well-raised pets bless the next egg
+- Day/dusk/night scenery synced to the real clock (night sleep regens faster)
+- Chiptune sound effects (WebAudio, mutable in Settings)
 - Offline-aware: stats decay over real time while you're away
 - Local-only persistence (localStorage with anonymous device ID)
 

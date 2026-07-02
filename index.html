@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=600, height=600, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>GlassPet</title>
   <link rel="icon" type="image/png" href="favicon.png">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=3">
 </head>
 <body>
   <div id="app">
@@ -96,6 +96,41 @@
               they're healthy or they'll feel worse.
             </div>
           </div>
+          <div class="howto-act">
+            <span class="howto-icon">&#128717;</span>
+            <div>
+              <b>Shop</b> — Spend coins on treats and accessories.
+              Earn coins from mini-games, daily check-in streaks, and
+              surprise events. Rare accessories rotate stock daily.
+            </div>
+          </div>
+          <div class="howto-act">
+            <span class="howto-icon">&#128073;</span>
+            <div>
+              <b>Discipline</b> — Pets sometimes beg, tantrum, or sulk.
+              Scold the fakers, comfort the genuinely sad. Discipline
+              shapes which adult form they become.
+            </div>
+          </div>
+        </div>
+
+        <div class="howto-section">
+          <div class="howto-heading">Life goes on</div>
+          <div class="howto-body">
+            The world follows the real clock — sunny days, dusk, and
+            starry nights. Sleeping at night restores extra energy.
+            Keep an eye out for shooting stars and visiting pets.
+            When a well-raised pet passes, its spirit blesses your next
+            egg, and every friend is remembered in the Hall of Fame.
+          </div>
+        </div>
+
+        <div class="howto-section">
+          <div class="howto-heading">???</div>
+          <div class="howto-body">
+            Rumors tell of a hidden fourth adult form for each line —
+            reached only by masters of care, discipline, and play…
+          </div>
         </div>
 
         <div class="howto-section">
@@ -184,11 +219,21 @@
           <span id="pet-name-label">Pet</span>
           <span class="pet-stage" id="pet-stage-label">Baby</span>
         </div>
+        <div class="streak-badge hidden" id="streak-badge">&#128293;0</div>
+        <div class="coin-badge">&#129689; <span id="coin-label">0</span></div>
         <div class="pet-age" id="pet-age-label">0d 0h</div>
+        <button class="gear-btn focusable" data-action="open-settings" title="Settings">&#9881;</button>
       </header>
       <div class="pet-stage-area">
         <canvas id="pet-canvas" width="600" height="380"></canvas>
         <div class="mood-bubble hidden" id="mood-bubble"></div>
+        <div class="mischief-bar hidden" id="mischief-bar">
+          <div class="mischief-label" id="mischief-label">Misbehaving!</div>
+          <div class="mischief-buttons">
+            <button class="mischief-btn focusable" data-action="mischief-comfort">&#129303; Comfort</button>
+            <button class="mischief-btn focusable" data-action="mischief-scold">&#128073; Scold</button>
+          </div>
+        </div>
       </div>
       <div class="stats-strip">
         <div class="stat" id="stat-hunger" title="Hunger">
@@ -215,6 +260,7 @@
       <nav class="action-rail">
         <button class="rail-btn focusable" data-action="act-feed" title="Feed">&#127828;</button>
         <button class="rail-btn focusable" data-action="act-play" title="Play">&#127918;</button>
+        <button class="rail-btn focusable" data-action="act-shop" title="Shop">&#128717;</button>
         <button class="rail-btn focusable" data-action="act-clean" title="Clean">&#127787;</button>
         <button class="rail-btn focusable" data-action="act-sleep" title="Sleep">&#127769;</button>
         <button class="rail-btn focusable" data-action="act-medicine" title="Medicine">&#128138;</button>
@@ -445,6 +491,29 @@
       </div>
     </div>
 
+    <!-- ============ SHOP ============ -->
+    <div id="shop" class="screen hidden">
+      <header class="header compact">
+        <button class="back-btn focusable" data-action="back">&#8592;</button>
+        <h1>Shop</h1>
+        <span class="header-meta">&#129689; <span id="shop-coin-label">0</span></span>
+      </header>
+      <div class="content" id="shop-content">
+        <!-- filled by JS -->
+      </div>
+    </div>
+
+    <!-- ============ HALL OF FAME ============ -->
+    <div id="album" class="screen hidden">
+      <header class="header compact">
+        <button class="back-btn focusable" data-action="back">&#8592;</button>
+        <h1>Hall of Fame</h1>
+      </header>
+      <div class="content" id="album-content">
+        <!-- filled by JS -->
+      </div>
+    </div>
+
     <!-- ============ STATS ============ -->
     <div id="stats" class="screen hidden">
       <header class="header compact">
@@ -483,19 +552,33 @@
         <h1>Settings</h1>
       </header>
       <div class="content">
+        <button class="big-action focusable" data-action="settings-sound">
+          <div class="big-action-icon">&#128266;</div>
+          <div class="big-action-body">
+            <div class="big-action-title">Sound: <span id="sound-label">On</span></div>
+            <div class="big-action-sub">Chiptune blips and jingles.</div>
+          </div>
+        </button>
+        <button class="big-action focusable" data-action="open-album">
+          <div class="big-action-icon">&#127942;</div>
+          <div class="big-action-body">
+            <div class="big-action-title">Hall of Fame</div>
+            <div class="big-action-sub">Every pet you've raised, remembered.</div>
+          </div>
+        </button>
+        <div class="setting-card">
+          <div class="setting-label">Check-in streak</div>
+          <div class="setting-value" id="streak-label">—</div>
+        </div>
         <div class="setting-card">
           <div class="setting-label">Device ID</div>
           <div class="setting-value" id="device-id-label">—</div>
-        </div>
-        <div class="setting-card">
-          <div class="setting-label">Pet history</div>
-          <div class="setting-value" id="history-label">No pets yet</div>
         </div>
         <button class="big-action focusable danger" data-action="settings-reset">
           <div class="big-action-icon">&#9888;</div>
           <div class="big-action-body">
             <div class="big-action-title">Reset everything</div>
-            <div class="big-action-sub">Delete current pet and all history.</div>
+            <div class="big-action-sub">Delete current pet, coins, items and all history.</div>
           </div>
         </button>
         <div class="setting-footer">v1.0 · Meta Display Pet</div>
@@ -505,6 +588,6 @@
     <!-- toast lives outside screens -->
     <div id="toast" class="toast"></div>
   </div>
-  <script src="app.js"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>

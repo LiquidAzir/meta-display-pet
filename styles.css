@@ -24,8 +24,8 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body {
-  width: 600px;
-  height: 600px;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
   background: var(--bg-primary);
   color: var(--text-primary);
@@ -33,10 +33,22 @@ html, body {
   font-feature-settings: "tnum";
 }
 
+/* The app is authored at a fixed 600x600 logical size, then uniformly scaled
+   by JS (fitToViewport) to fill any viewport — PC, phone, or glasses — and
+   centered here with even letterboxing. On the 600x600 glasses the scale is 1. */
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 #app {
-  width: 100%;
-  height: 100%;
+  width: 600px;
+  height: 600px;
   position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  transform-origin: center center;
 }
 
 .screen {
@@ -481,7 +493,7 @@ html, body {
 
 .action-rail {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(7, 1fr);
   gap: 6px;
   padding: 10px 14px 14px;
   background: var(--bg-soft);
@@ -979,9 +991,164 @@ html, body {
   padding-top: 16px;
 }
 
+.gear-btn {
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 16px;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.gear-btn:focus { color: var(--text-primary); }
+
+/* ===================== ECONOMY BADGES ===================== */
+.coin-badge {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffd83a;
+  background: rgba(255, 216, 58, 0.1);
+  border: 1px solid rgba(255, 216, 58, 0.25);
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.streak-badge {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-warm);
+  background: rgba(255, 159, 67, 0.12);
+  border: 1px solid rgba(255, 159, 67, 0.25);
+  padding: 4px 9px;
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+}
+
+/* ===================== MISCHIEF PROMPT ===================== */
+.mischief-bar {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  background: rgba(20, 20, 31, 0.92);
+  border: 1px solid var(--accent-warm);
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+}
+.mischief-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--accent-warm);
+  white-space: nowrap;
+}
+.mischief-buttons { display: flex; gap: 8px; }
+.mischief-btn {
+  background: var(--bg-card-2);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: var(--r-pill);
+  border: 2px solid transparent;
+  white-space: nowrap;
+}
+
+/* ===================== SHOP ===================== */
+.shop-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--accent);
+  margin-top: 4px;
+}
+.shop-price {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffd83a;
+  background: rgba(255, 216, 58, 0.1);
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+.shop-price.owned {
+  color: var(--good);
+  background: rgba(0, 255, 136, 0.1);
+}
+.shop-row.cant-afford .shop-price { opacity: 0.45; }
+.shop-row.cant-afford .big-action-icon { opacity: 0.55; }
+.shop-row.equipped { border-color: rgba(0, 255, 136, 0.4); }
+.rare-tag {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--accent-violet);
+  background: rgba(176, 107, 255, 0.14);
+  border: 1px solid rgba(176, 107, 255, 0.4);
+  padding: 2px 6px;
+  border-radius: var(--r-pill);
+  vertical-align: 2px;
+}
+.shop-footer {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  padding: 6px 0 10px;
+}
+
+/* ===================== HALL OF FAME ===================== */
+.album-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  background: var(--bg-card);
+  border-radius: var(--r-md);
+}
+.album-icon {
+  font-size: 28px;
+  width: 48px;
+  height: 48px;
+  background: var(--bg-card-2);
+  border-radius: var(--r-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.album-body { flex: 1; min-width: 0; }
+.album-title { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+.album-sub { font-size: 12px; color: var(--text-secondary); line-height: 1.45; }
+.album-empty {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 48px 24px;
+}
+.album-legacy {
+  text-align: center;
+  font-size: 13px;
+  color: var(--accent);
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid rgba(0, 212, 255, 0.25);
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+}
+
 /* ===================== TOAST ===================== */
 .toast {
-  position: fixed;
+  position: absolute;
   top: 12px;
   left: 50%;
   transform: translateX(-50%) translateY(-80px);
