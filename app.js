@@ -15,20 +15,32 @@
       adult: 48,       // 79..127h
       senior:48,       // 127..175h
     },
-    // stat decay per hour
+    // stat decay per hour — tuned to be forgiving. From full, a stat takes
+    // ~18-22h of *active* time to empty, and time spent with the app closed
+    // decays much slower still (see offline softening below). Checking in once
+    // a day (or even every couple of days) comfortably keeps a pet healthy.
     decay: {
-      hunger: 8,
-      happy:  6,
-      clean:  5,
-      energy: 4,        // while awake
-      sleepRegen: 25,   // energy regen per hour asleep
+      hunger: 4.5,
+      happy:  3.5,
+      clean:  3,
+      energy: 3,        // while awake
+      sleepRegen: 30,   // energy regen per hour asleep
     },
-    poopHoursMin: 2.5,
-    poopHoursMax: 4.5,
+    // Offline softening: only the first `offlineGraceHours` of an absence decay
+    // at the full rate; everything beyond that runs at `offlineDecayMul`. Live
+    // ticks (tiny elapsed time) are unaffected, so the pet still feels responsive
+    // while you watch — this only cushions long stretches away from the app.
+    offlineGraceHours: 3,
+    offlineDecayMul: 0.4,
+    poopHoursMin: 4,
+    poopHoursMax: 7,
     poopMaxOnScreen: 3,
-    sickThreshold: 18,         // when any core stat < this for too long
-    sickProbabilityPerHour: 0.4, // when conditions are bad
-    critForDeathHours: 12,      // health 0 sustained
+    poopCleanPenalty: 10,       // cleanliness lost per new mess
+    sickThreshold: 12,          // a core stat must be below this to risk illness
+    sickNeglectMinutes: 240,    // ...and stay that low for this long (cumulative)
+    sickProbabilityPerHour: 0.1,// then this hourly chance (proper odds, capped)
+    maxHealthLossPerTick: 35,   // a single catch-up can't crater health
+    critForDeathHours: 48,      // health must sit at 0 for two full days to pass
     startCoins: 50,
     mischiefPerHour: 0.22,      // chance/hour of a misbehavior while awake
     mischiefTimeoutMin: 90,     // ignored misbehavior auto-resolves (with penalty)
@@ -771,6 +783,12 @@
     var dtMs = now - pet.lastTickAt;
     if (dtMs <= 0) return;
     var dtH = dtMs / 3600000;
+    // effH = decay-effective hours. Live ticks pass through unchanged; long
+    // absences (app closed) are throttled past the grace window so being away
+    // for a day or two doesn't tank the pet.
+    var effH = dtH <= CONFIG.offlineGraceHours
+      ? dtH
+      : CONFIG.offlineGraceHours + (dtH - CONFIG.offlineGraceHours) * CONFIG.offlineDecayMul;
 
     var stage = petStageFromAge(pet);
     var prevStage = pet.stage;
@@ -785,15 +803,15 @@
     // Decay
     var stageMul = stage === 'baby' ? 1.2 : stage === 'senior' ? 0.7 : 1.0;
     if (pet.boon) stageMul *= CONFIG.boonDecayMul;   // legacy boon: slower drain
-    pet.hunger = clamp(pet.hunger - CONFIG.decay.hunger * dtH * stageMul, 0, 100);
-    pet.happy  = clamp(pet.happy  - CONFIG.decay.happy  * dtH * stageMul, 0, 100);
-    pet.clean  = clamp(pet.clean  - CONFIG.decay.clean  * dtH * stageMul, 0, 100);
+    pet.hunger = clamp(pet.hunger - CONFIG.decay.hunger * effH * stageMul, 0, 100);
+    pet.happy  = clamp(pet.happy  - CONFIG.decay.happy  * effH * stageMul, 0, 100);
+    pet.clean  = clamp(pet.clean  - CONFIG.decay.clean  * effH * stageMul, 0, 100);
     if (pet.asleep) {
       var regen = CONFIG.decay.sleepRegen * (dayPhase() === 'night' ? CONFIG.nightRegenMul : 1);
-      pet.energy = clamp(pet.energy + regen * dtH, 0, 100);
+      pet.energy = clamp(pet.energy + regen * effH, 0, 100);
       if (pet.energy >= 99) pet.asleep = false;
     } else {
-      pet.energy = clamp(pet.energy - CONFIG.decay.energy * dtH * stageMul, 0, 100);
+      pet.energy = clamp(pet.energy - CONFIG.decay.energy * effH * stageMul, 0, 100);
     }
 
     // Misbehavior: occasionally the pet acts up and wants a response
@@ -805,47 +823,59 @@
           pet.discipline = clamp(pet.discipline - 6, 0, 100);
           pet.happy = clamp(pet.happy - 4, 0, 100);
         }
-      } else if (Math.random() < CONFIG.mischiefPerHour * dtH) {
+      } else if (dtH < 1 && Math.random() < CONFIG.mischiefPerHour * dtH) {
+        // only spawn during live play — never as a pile-up on reopen
         var mType = pet.happy < 40 ? 'sulk' : (Math.random() < 0.5 ? 'beg' : 'tantrum');
         pet.mischief = { type: mType, sinceMs: now };
       }
     }
 
-    // Poop schedule
+    // Poop schedule (absolute timestamps, so at most poopMaxOnScreen accrue
+    // no matter how long you were away)
     while (now >= pet.nextPoopAt && pet.poops.length < CONFIG.poopMaxOnScreen && stage !== 'egg') {
       pet.poops.push({ atMs: pet.nextPoopAt });
-      pet.clean = clamp(pet.clean - 18, 0, 100);
+      pet.clean = clamp(pet.clean - CONFIG.poopCleanPenalty, 0, 100);
       pet.nextPoopAt += randRange(CONFIG.poopHoursMin, CONFIG.poopHoursMax) * 3600 * 1000;
     }
 
     // Care score (averaged stats)
     var avg = (pet.hunger + pet.happy + pet.clean + pet.energy) / 4;
-    pet.careSum += avg * dtH;
-    pet.careSamples += dtH;
+    pet.careSum += avg * effH;
+    pet.careSamples += effH;
 
-    // Neglect & sickness conditions
+    // Neglect & sickness — illness only follows *sustained, severe* neglect.
     var critStat = Math.min(pet.hunger, pet.happy, pet.clean);
     if (critStat < CONFIG.sickThreshold) {
-      pet.neglectMin += dtH * 60;
-      if (!pet.sick && Math.random() < CONFIG.sickProbabilityPerHour * dtH) {
-        pet.sick = true;
-        pet.sickSinceMs = now;
+      pet.neglectMin += effH * 60;
+      if (!pet.sick && pet.neglectMin >= CONFIG.sickNeglectMinutes) {
+        // Proper probability over the window, with the window capped so a long
+        // offline catch-up can't silently guarantee sickness.
+        var rollH = Math.min(effH, 4);
+        var pSick = 1 - Math.pow(1 - CONFIG.sickProbabilityPerHour, rollH);
+        if (Math.random() < pSick) { pet.sick = true; pet.sickSinceMs = now; }
       }
+    } else {
+      // stats are okay again — the neglect timer eases back down
+      pet.neglectMin = Math.max(0, pet.neglectMin - effH * 30);
     }
-    if (pet.poops.length >= 2 && Math.random() < 0.3 * dtH) {
-      pet.sick = true;
-      pet.sickSinceMs = pet.sickSinceMs || now;
+    // A full, unattended mess only risks illness once it has actually driven
+    // cleanliness critically low — a normal day's poops won't make a pet sick.
+    if (!pet.sick && pet.poops.length >= CONFIG.poopMaxOnScreen && pet.clean < CONFIG.sickThreshold) {
+      var rollP = Math.min(effH, 4);
+      if (Math.random() < 1 - Math.pow(1 - 0.05, rollP)) { pet.sick = true; pet.sickSinceMs = now; }
     }
 
-    // Health update
+    // Health — drains only when a stat is critically low, recovers readily, and
+    // can't nosedive in a single catch-up (maxHealthLossPerTick).
     var healthDelta = 0;
-    if (pet.sick) healthDelta -= 12 * dtH;
-    if (pet.hunger < 15) healthDelta -= 8 * dtH;
-    if (pet.clean < 15) healthDelta -= 6 * dtH;
-    if (pet.happy < 15) healthDelta -= 4 * dtH;
-    if (!pet.sick && pet.hunger > 50 && pet.clean > 50 && pet.happy > 50) {
-      healthDelta += 6 * dtH;
+    if (pet.sick)        healthDelta -= 6 * effH;
+    if (pet.hunger < 10) healthDelta -= 5 * effH;
+    if (pet.clean  < 10) healthDelta -= 3 * effH;
+    if (pet.happy  < 10) healthDelta -= 2 * effH;
+    if (!pet.sick && pet.hunger > 40 && pet.clean > 40 && pet.happy > 40) {
+      healthDelta += 10 * effH;   // well cared-for → steady recovery
     }
+    if (healthDelta < -CONFIG.maxHealthLossPerTick) healthDelta = -CONFIG.maxHealthLossPerTick;
     pet.health = clamp(pet.health + healthDelta, 0, 100);
 
     if (pet.health <= 0) {
