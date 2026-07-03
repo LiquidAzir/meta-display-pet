@@ -20,6 +20,14 @@ services:
       - path: /*
         name: Permissions-Policy
         value: "geolocation=(), microphone=(), camera=()"
+      # Always revalidate the launcher icon + manifest so icon updates show
+      # up immediately (on the glasses launcher and in browser tabs).
+      - path: /favicon.png
+        name: Cache-Control
+        value: "max-age=0, must-revalidate"
+      - path: /manifest.webmanifest
+        name: Cache-Control
+        value: "max-age=0, must-revalidate"
     routes:
       - type: rewrite
         source: /*
